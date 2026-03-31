@@ -1,3 +1,4 @@
+import 'package:dental_app/core/features/baptemes/presentation/Baptemes_page.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -248,35 +249,56 @@ class _HomePageState extends State<HomePage> {
           _actionCard("Payments", Icons.payment, Colors.green),
           _actionCard("Projects", Icons.work, Colors.orange),
           _actionCard("Bureau", Icons.account_balance, Colors.purple),
+          _actionCard(
+            "Baptêmes",
+            Icons.church,
+            Colors.teal,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => BaptismPage()),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _actionCard(String title, IconData icon, Color color) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 10),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.15),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(height: 10),
-          Text(title,
+  Widget _actionCard(
+    String title,
+    IconData icon,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 10),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
       ),
     );
   }

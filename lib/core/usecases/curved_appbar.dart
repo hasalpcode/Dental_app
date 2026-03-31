@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final Widget? leading;
 
-  const CurvedAppBar({super.key, required this.title});
+  const CurvedAppBar({super.key, required this.title, this.leading});
 
   @override
   Size get preferredSize => const Size.fromHeight(100);
@@ -25,24 +26,33 @@ class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+              // 🔹 Leading + Title
+              Row(
                 children: [
-                  Text(title,
-                      style: TextStyle(
-                          fontSize: 24,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold)),
-                  // SizedBox(height: 4),
-                  // Text("Manage your association",
-                  //     style: TextStyle(color: Colors.white70)),
+                  if (leading != null) leading!,
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      // Optional subtitle
+                      // Text("Manage your association",
+                      //     style: TextStyle(color: Colors.white70)),
+                    ],
+                  ),
                 ],
               ),
-              CircleAvatar(
+
+              // 🔹 Avatar
+              const CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(Icons.person, color: Colors.black87),
-              )
+              ),
             ],
           ),
         ),
