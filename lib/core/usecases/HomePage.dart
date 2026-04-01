@@ -1,7 +1,10 @@
+import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/Baptemes_page.dart';
+import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,11 +37,16 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
 
       // 🔥 APP BAR
-      appBar: CurvedAppBar(title: "Bienvenue!"),
+      appBar: CurvedAppBar(
+          title: "DÉNTAL",
+          option:
+              auth.user != null ? "Bienvenue! ${auth.user!.username}" : null),
 
       // 🔥 BODY
       body: SingleChildScrollView(

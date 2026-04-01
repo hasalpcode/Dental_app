@@ -18,6 +18,7 @@ class AuthRepositoryImpl implements AuthRepository {
       email: userModel.user.email,
       role: userModel.user.role,
       dateInscription: userModel.user.dateInscription,
+      token: userModel.token,
     );
   }
 }

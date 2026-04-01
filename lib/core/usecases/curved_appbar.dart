@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
 class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
+  final String? title;
+  final String? option;
   final Widget? leading;
 
-  const CurvedAppBar({super.key, required this.title, this.leading});
+  const CurvedAppBar({
+    super.key,
+    this.title,
+    this.option,
+    this.leading,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(100);
@@ -35,14 +41,19 @@ class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(title,
+                      Text("DÉNTAL",
                           style: const TextStyle(
                               fontSize: 24,
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),
-                      // Optional subtitle
-                      // Text("Manage your association",
-                      //     style: TextStyle(color: Colors.white70)),
+                      if (option != null)
+                        Text(
+                          option!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                          ),
+                        ),
                     ],
                   ),
                 ],

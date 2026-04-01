@@ -4,6 +4,7 @@ class User {
   final String email;
   final Role role;
   final DateTime dateInscription;
+  final String? token;
 
   User({
     required this.userId,
@@ -11,16 +12,17 @@ class User {
     required this.email,
     required this.role,
     required this.dateInscription,
+    this.token,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      userId: json['userId'],
-      username: json['username'] ?? '',
-      email: json['email'] ?? '',
-      role: Role.fromJson(json['role']),
-      dateInscription: DateTime.parse(json['dateInscription']),
-    );
+        userId: json['userId'],
+        username: json['username'] ?? '',
+        email: json['email'] ?? '',
+        role: Role.fromJson(json['role']),
+        dateInscription: DateTime.parse(json['dateInscription']),
+        token: json['token']);
   }
 }
 
