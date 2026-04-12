@@ -6,7 +6,7 @@ class DeleteMember {
 
   DeleteMember(this.repository);
 
-  void call(String id) {
-    repository.deleteMember(id);
+  Future<void> call(int id) async {
+    await repository.deleteMember(id);
   }
 }

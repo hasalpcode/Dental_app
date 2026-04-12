@@ -6,7 +6,7 @@ class AddMember {
 
   AddMember(this.repository);
 
-  void call(Member member) {
-    repository.addMember(member);
+  Future<Member> call(Member member) async {
+    return await repository.addMember(member);
   }
 }

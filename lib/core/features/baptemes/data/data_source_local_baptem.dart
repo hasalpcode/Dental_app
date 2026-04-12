@@ -12,17 +12,19 @@ class BaptismLocalDataSource {
       contributions: [
         ContributionModel(
           member: Member(
-            id: "m1",
-            name: "Alice",
-            email: "alice@example.com",
+            userId: 2,
+            username: "Alice",
+            tel: "772552431",
+            address: "456 Avenue de Lyon",
           ),
           amount: 50.0,
         ),
         ContributionModel(
           member: Member(
-            id: "m2",
-            name: "Bob",
-            email: "bob@example.com",
+            userId: 1,
+            username: "Bob",
+            tel: "772552432",
+            address: "123 Rue de Paris",
           ),
           amount: 30.0,
         ),

@@ -1,20 +1,32 @@
-import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:flutter/material.dart';
+import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
+import 'package:dental_app/core/features/members/domain/entity/member.dart';
 
 class PaymentTile extends StatelessWidget {
   final PaymentEntity payment;
+  final Map<int, Member> memberMap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const PaymentTile({
     super.key,
     required this.payment,
+    required this.memberMap,
     required this.onEdit,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
+    final memberId =
+        payment.memberIds.isNotEmpty ? payment.memberIds.first : null;
+
+    final member = (memberId != null) ? memberMap[memberId] : null;
+
+    final username = member?.username ?? "Unknown";
+
+    final date = payment.dateVersement;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -28,41 +40,43 @@ class PaymentTile extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            radius: 28,
             backgroundColor: Colors.green.withOpacity(0.2),
-            child: Text(
-              payment.memberName[0],
-              style: const TextStyle(
-                  fontSize: 22,
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold),
-            ),
+            child: Text(username.isNotEmpty ? username[0] : "?"),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(payment.memberName,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text("${payment.amount.toStringAsFixed(2)} €",
-                    style: const TextStyle(color: Colors.grey)),
                 Text(
-                    "${payment.date.day}/${payment.date.month}/${payment.date.year}",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  username,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "${payment.montant} €",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  date != null
+                      ? "${date.day}/${date.month}/${date.year}"
+                      : "No date",
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),
           Row(
             children: [
               IconButton(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit, color: Colors.orange)),
+                icon: const Icon(Icons.edit, color: Colors.orange),
+                onPressed: onEdit,
+              ),
               IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete, color: Colors.red)),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: onDelete,
+              ),
             ],
           )
         ],

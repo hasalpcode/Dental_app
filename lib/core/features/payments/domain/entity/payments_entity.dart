@@ -1,15 +1,15 @@
 class PaymentEntity {
-  final String id;
-  final String memberId;
-  final String memberName;
-  final double amount;
-  final DateTime date;
+  final String? id;
+  final List<int> memberIds;
+  final String mois;
+  final double montant;
+  final DateTime? dateVersement;
 
   PaymentEntity({
-    required this.id,
-    required this.memberId,
-    required this.memberName,
-    required this.amount,
-    required this.date,
+    this.id,
+    required this.memberIds,
+    required this.mois,
+    required this.montant,
+    this.dateVersement,
   });
 }

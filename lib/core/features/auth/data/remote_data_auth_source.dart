@@ -17,7 +17,7 @@ class AuthRemoteDataSource {
     try {
       final request = await client
           .postUrl(Uri.parse(
-              'https://52a5-46-193-66-177.ngrok-free.app/user-service/auth/login'))
+              'https://ed10-46-193-66-177.ngrok-free.app/user-service/auth/login'))
           .timeout(const Duration(seconds: 10));
 
       request.headers.set(HttpHeaders.contentTypeHeader, "application/json");

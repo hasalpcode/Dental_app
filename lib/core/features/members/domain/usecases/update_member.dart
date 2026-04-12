@@ -6,7 +6,7 @@ class UpdateMember {
 
   UpdateMember(this.repository);
 
-  void call(Member member) {
-    repository.updateMember(member);
+  Future<Member> call(Member member) async {
+    return await repository.updateMember(member);
   }
 }

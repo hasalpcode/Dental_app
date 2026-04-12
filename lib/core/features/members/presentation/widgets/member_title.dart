@@ -40,12 +40,12 @@ class MemberTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: getAvatarColor(member.name).withOpacity(0.2),
+            backgroundColor: getAvatarColor(member.username).withOpacity(0.2),
             child: Text(
-              member.name[0],
+              member.username[0],
               style: TextStyle(
                 fontSize: 22,
-                color: getAvatarColor(member.name),
+                color: getAvatarColor(member.username),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -55,11 +55,11 @@ class MemberTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(member.name,
+                Text(member.username,
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(member.email,
+                Text(member.tel,
                     style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ],
             ),

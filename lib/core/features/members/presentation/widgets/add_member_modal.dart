@@ -2,10 +2,14 @@ import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:flutter/material.dart';
 
 class AddMemberModal extends StatefulWidget {
-  final Function(Member) onSubmit;
+  final Future<void> Function(Member) onSubmit;
   final Member? member;
 
-  const AddMemberModal({super.key, required this.onSubmit, this.member});
+  const AddMemberModal({
+    super.key,
+    required this.onSubmit,
+    this.member,
+  });
 
   @override
   State<AddMemberModal> createState() => _AddMemberModalState();
@@ -13,14 +17,63 @@ class AddMemberModal extends StatefulWidget {
 
 class _AddMemberModalState extends State<AddMemberModal> {
   final nameController = TextEditingController();
-  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
+  final addressController = TextEditingController();
+
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.member != null) {
-      nameController.text = widget.member!.name;
-      emailController.text = widget.member!.email;
+      nameController.text = widget.member!.username;
+      phoneController.text = widget.member!.tel;
+      addressController.text = widget.member!.address;
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    addressController.dispose();
+    super.dispose();
+  }
+
+  void _submit() async {
+    if (nameController.text.trim().isEmpty ||
+        phoneController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nom et téléphone obligatoires")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final member = Member(
+        membreId: widget.member?.membreId ?? null,
+        userId: widget.member?.userId ?? null,
+        username: nameController.text.trim(),
+        tel: phoneController.text.trim(),
+        address: addressController.text.trim(),
+        bureauId: widget.member?.bureauId ?? null,
+        posteId: widget.member?.posteId ?? null,
+        dateAdhesion: widget.member?.dateAdhesion ?? DateTime.now(),
+      );
+
+      print(
+          "Submitting member: ${member.userId}, ${member.username}, ${member.tel}, ${member.address}");
+      await widget.onSubmit(member);
+
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -43,74 +96,99 @@ class _AddMemberModalState extends State<AddMemberModal> {
           ),
           child: Stack(
             children: [
-              // 🔹 Form content
               SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 30), // espace pour la croix
+                    const SizedBox(height: 30),
+
                     Text(
                       widget.member == null ? "Add Member" : "Edit Member",
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+
                     const SizedBox(height: 20),
 
-                    // Name Field
+                    // NAME
                     TextField(
                       controller: nameController,
                       decoration: InputDecoration(
-                        labelText: "Name",
+                        labelText: "Nom",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide.none),
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 15),
 
-                    // Email Field
+                    // PHONE
                     TextField(
-                      controller: emailController,
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
-                        labelText: "Email",
+                        labelText: "Téléphone",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide.none),
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
+
+                    const SizedBox(height: 15),
+
+                    // ADDRESS
+                    TextField(
+                      controller: addressController,
+                      decoration: InputDecoration(
+                        labelText: "Adresse",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: 25),
 
-                    // Save Button
+                    // BUTTON
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          final member = Member(
-                            id: widget.member?.id ?? DateTime.now().toString(),
-                            name: nameController.text,
-                            email: emailController.text,
-                          );
-                          widget.onSubmit(member);
-                          Navigator.pop(context);
-                        },
+                        onPressed: isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        child: const Text("Save"),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text("Enregistrer"),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
 
-              // 🔹 Close button (croix)
+              // CLOSE BUTTON
               Positioned(
                 right: 0,
                 top: 0,

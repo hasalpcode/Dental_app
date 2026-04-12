@@ -1,4 +1,4 @@
-import 'package:dental_app/core/features/members/data/data_source_local.dart';
+import 'package:dental_app/core/features/members/data/data_remote_source.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/members/domain/usecases/add_member.dart';
@@ -7,9 +7,9 @@ import 'package:dental_app/core/features/members/domain/usecases/get_members.dar
 import 'package:dental_app/core/features/members/domain/usecases/update_member.dart';
 import 'package:dental_app/core/features/members/presentation/widgets/add_member_modal.dart';
 import 'package:dental_app/core/features/members/presentation/widgets/member_list.dart';
-import 'package:dental_app/core/features/members/presentation/widgets/member_title.dart';
-import 'package:flutter/material.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class MembersPage extends StatefulWidget {
   const MembersPage({super.key});
@@ -20,31 +20,90 @@ class MembersPage extends StatefulWidget {
 
 class _MembersPageState extends State<MembersPage> {
   late final MemberRepositoryImpl repository;
-  late final GetMembers getMembers;
-  late final AddMember addMember;
-  late final UpdateMember updateMember;
-  late final DeleteMember deleteMember;
+  late final GetMembers getMembersUseCase;
+  late final AddMember addMemberUseCase;
+  late final UpdateMember updateMemberUseCase;
+  late final DeleteMember deleteMemberUseCase;
 
   List<Member> members = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    final dataSource = MemberLocalDataSource();
+
+    // Initialisation des sources et repository
+    final dataSource = MemberRemoteDataSource(http.Client());
     repository = MemberRepositoryImpl(dataSource);
 
-    getMembers = GetMembers(repository);
-    addMember = AddMember(repository);
-    updateMember = UpdateMember(repository);
-    deleteMember = DeleteMember(repository);
+    getMembersUseCase = GetMembers(repository);
+    addMemberUseCase = AddMember(repository);
+    updateMemberUseCase = UpdateMember(repository);
+    deleteMemberUseCase = DeleteMember(repository);
 
-    members = getMembers();
+    // Chargement initial des membres
+    _loadMembers();
   }
 
-  void _refresh() {
-    setState(() {
-      members = getMembers();
-    });
+  Future<void> _loadMembers() async {
+    setState(() => isLoading = true);
+    try {
+      final fetchedMembers = await getMembersUseCase();
+      setState(() {
+        members = fetchedMembers;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur récupération membres: $e')),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _refresh() async {
+    await _loadMembers();
+  }
+
+  void _openAddModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddMemberModal(
+        onSubmit: (m) async {
+          try {
+            await addMemberUseCase(m);
+            await _refresh();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erreur ajout membre: $e')),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _openEditModal(Member member) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddMemberModal(
+        member: member,
+        onSubmit: (m) async {
+          try {
+            await updateMemberUseCase(m);
+            await _refresh();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erreur modification membre: $e')),
+            );
+          }
+        },
+      ),
+    );
   }
 
   @override
@@ -54,46 +113,27 @@ class _MembersPageState extends State<MembersPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddModal,
         child: const Icon(Icons.add),
+        backgroundColor: Colors.green,
       ),
-      body: MembersList(
-        members: members,
-        onEdit: _openEditModal,
-        onDelete: (id) {
-          deleteMember(id);
-          _refresh();
-        },
-      ),
-    );
-  }
-
-  /// 🔹 Modal stylé et centré pour ajout
-  void _openAddModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddMemberModal(
-        onSubmit: (m) {
-          addMember(m);
-          _refresh();
-        },
-      ),
-    );
-  }
-
-  /// 🔹 Modal stylé et centré pour modification
-  void _openEditModal(Member member) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddMemberModal(
-        member: member,
-        onSubmit: (m) {
-          updateMember(m);
-          _refresh();
-        },
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _refresh,
+              child: MembersList(
+                members: members,
+                onEdit: _openEditModal,
+                onDelete: (id) async {
+                  try {
+                    await deleteMemberUseCase(id);
+                    await _refresh();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erreur suppression membre: $e')),
+                    );
+                  }
+                },
+              ),
+            ),
     );
   }
 }

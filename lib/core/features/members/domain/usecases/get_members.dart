@@ -6,7 +6,7 @@ class GetMembers {
 
   GetMembers(this.repository);
 
-  List<Member> call() {
-    return repository.getMembers();
+  Future<List<Member>> call() async {
+    return await repository.getMembers();
   }
 }

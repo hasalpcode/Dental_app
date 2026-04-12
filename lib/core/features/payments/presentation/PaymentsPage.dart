@@ -1,4 +1,5 @@
-import 'package:dental_app/core/features/payments/data/payment_local_data_source.dart';
+import 'package:dental_app/core/features/members/data/data_remote_source.dart';
+import 'package:dental_app/core/features/payments/data/payment_remote_data_source.dart';
 import 'package:dental_app/core/features/payments/data/payment_repository_impl.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:dental_app/core/features/payments/domain/usecases/add_payment.dart';
@@ -7,8 +8,12 @@ import 'package:dental_app/core/features/payments/domain/usecases/get_payments.d
 import 'package:dental_app/core/features/payments/domain/usecases/update_payment.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/add_payment_modal.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/payment_list.dart';
-import 'package:flutter/material.dart';
+import 'package:dental_app/core/features/members/domain/entity/member.dart';
+import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
+import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class PaymentsPage extends StatefulWidget {
   const PaymentsPage({super.key});
@@ -18,45 +23,84 @@ class PaymentsPage extends StatefulWidget {
 }
 
 class _PaymentsPageState extends State<PaymentsPage> {
-  late final PaymentRepositoryImpl repository;
+  late final PaymentRepositoryImpl paymentRepository;
+  late final MemberRepositoryImpl memberRepository;
+
   late final GetPayments getPayments;
   late final AddPayment addPayment;
   late final UpdatePayment updatePayment;
   late final DeletePayment deletePayment;
 
-  List<PaymentEntity> payments = [];
-  final List<String> members = ["John", "Alice", "Bob", "Emma"]; // exemple
+  late final GetMembers getMembers;
 
-  // 🔹 Filtre mois et année
+  List<PaymentEntity> payments = [];
+  List<Member> members = [];
+
+  Map<int, Member> memberMap = {};
+
+  bool isLoading = true;
+
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
-  List<int> years =
-      List.generate(5, (i) => DateTime.now().year - i); // 5 dernières années
+
+  List<int> years = List.generate(5, (i) => DateTime.now().year - i);
 
   @override
   void initState() {
     super.initState();
-    final dataSource = PaymentLocalDataSource();
-    repository = PaymentRepositoryImpl(dataSource);
 
-    getPayments = GetPayments(repository);
-    addPayment = AddPayment(repository);
-    updatePayment = UpdatePayment(repository);
-    deletePayment = DeletePayment(repository);
+    final client = http.Client();
 
-    payments = getPayments();
+    paymentRepository = PaymentRepositoryImpl(
+      PaymentRemoteDataSource(client),
+    );
+
+    memberRepository = MemberRepositoryImpl(
+      MemberRemoteDataSource(client),
+    );
+
+    getPayments = GetPayments(paymentRepository);
+    addPayment = AddPayment(paymentRepository);
+    updatePayment = UpdatePayment(paymentRepository);
+    deletePayment = DeletePayment(paymentRepository);
+
+    getMembers = GetMembers(memberRepository);
+
+    _loadData();
   }
 
-  void _refresh() {
-    setState(() => payments = getPayments());
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+
+    try {
+      final results = await Future.wait([
+        getPayments(),
+        getMembers(),
+      ]);
+
+      payments = results[0] as List<PaymentEntity>;
+      members = results[1] as List<Member>;
+
+      // ✅ FIX IMPORTANT
+      memberMap = {
+        for (final m in members)
+          if (m.membreId != null) m.membreId!: m,
+      };
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur: $e")),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
-  // 🔹 Liste filtrée par mois et année
   List<PaymentEntity> get filteredPayments {
-    return payments
-        .where(
-            (p) => p.date.month == selectedMonth && p.date.year == selectedYear)
-        .toList();
+    return payments.where((p) {
+      final d = p.dateVersement;
+      if (d == null) return false;
+      return d.month == selectedMonth && d.year == selectedYear;
+    }).toList();
   }
 
   @override
@@ -67,92 +111,77 @@ class _PaymentsPageState extends State<PaymentsPage> {
         onPressed: _openAddModal,
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          // 🔹 Filtre mois / année
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                Expanded(
-                  child: DropdownButton<int>(
-                    value: selectedMonth,
-                    isExpanded: true,
-                    items: List.generate(12, (i) => i + 1)
-                        .map((m) => DropdownMenuItem(
-                              value: m,
-                              child: Text("Mois $m"),
-                            ))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => selectedMonth = v);
-                    },
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButton<int>(
+                          value: selectedMonth,
+                          isExpanded: true,
+                          items: List.generate(12, (i) => i + 1)
+                              .map((m) => DropdownMenuItem(
+                                    value: m,
+                                    child: Text("Mois $m"),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => selectedMonth = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButton<int>(
+                          value: selectedYear,
+                          isExpanded: true,
+                          items: years
+                              .map((y) => DropdownMenuItem(
+                                    value: y,
+                                    child: Text("$y"),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => selectedYear = v!),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButton<int>(
-                    value: selectedYear,
-                    isExpanded: true,
-                    items: years
-                        .map((y) => DropdownMenuItem(
-                              value: y,
-                              child: Text("$y"),
-                            ))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => selectedYear = v);
-                    },
+                  child: RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: PaymentsList(
+                      payments: filteredPayments,
+                      memberMap: memberMap,
+                      onEdit: (p) async {
+                        await updatePayment(p);
+                        await _loadData();
+                      },
+                      onDelete: (id) async {
+                        await deletePayment(id);
+                        await _loadData();
+                      },
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-
-          // 🔹 Liste filtrée
-          Expanded(
-            child: PaymentsList(
-              payments: filteredPayments,
-              onEdit: _openEditModal,
-              onDelete: (id) {
-                deletePayment(id);
-                _refresh();
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 
-  // 🔹 Modal ajout
   void _openAddModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddPaymentModal(
-        members: members,
-        onSubmit: (p) {
-          addPayment(p);
-          _refresh();
-        },
-      ),
-    );
-  }
-
-  // 🔹 Modal édition
-  void _openEditModal(PaymentEntity payment) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddPaymentModal(
-        payment: payment,
-        members: members,
-        onSubmit: (p) {
-          updatePayment(p);
-          _refresh();
+        members: members.map((e) => e.username).toList(),
+        onSubmit: (p) async {
+          await addPayment(p);
+          await _loadData();
         },
       ),
     );

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class MembersList extends StatelessWidget {
   final List<Member> members;
   final Function(Member) onEdit;
-  final Function(String) onDelete;
+  final Function(int) onDelete;
 
   const MembersList({
     super.key,
@@ -35,7 +35,7 @@ class MembersList extends StatelessWidget {
                   return MemberTile(
                     member: member,
                     onEdit: () => onEdit(member),
-                    onDelete: () => onDelete(member.id),
+                    onDelete: () => onDelete(member.membreId!),
                   );
                 },
               )
@@ -46,7 +46,7 @@ class MembersList extends StatelessWidget {
                   return MemberTile(
                     member: member,
                     onEdit: () => onEdit(member),
-                    onDelete: () => onDelete(member.id),
+                    onDelete: () => onDelete(member.membreId!),
                   );
                 },
               ),

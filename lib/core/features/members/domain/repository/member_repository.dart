@@ -1,8 +1,8 @@
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 
 abstract class MemberRepository {
-  List<Member> getMembers();
-  void addMember(Member member);
-  void updateMember(Member member);
-  void deleteMember(String id);
+  Future<List<Member>> getMembers();
+  Future<Member> addMember(Member member);
+  Future<Member> updateMember(Member member);
+  Future<void> deleteMember(int id);
 }

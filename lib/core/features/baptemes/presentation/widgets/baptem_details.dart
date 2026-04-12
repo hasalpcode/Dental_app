@@ -49,8 +49,8 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
           ...baptism.contributions.map((c) {
             return ListTile(
               leading: const Icon(Icons.person),
-              title: Text(c.member.name),
-              subtitle: Text(c.member.email),
+              title: Text(c.member.username),
+              subtitle: Text(c.member.tel),
               trailing: Text("${c.amount} €"),
             );
           }),

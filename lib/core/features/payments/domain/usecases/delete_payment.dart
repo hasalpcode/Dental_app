@@ -2,7 +2,10 @@ import 'package:dental_app/core/features/payments/domain/repository/payment_repo
 
 class DeletePayment {
   final PaymentRepository repository;
+
   DeletePayment(this.repository);
 
-  void call(String id) => repository.deletePayment(id);
+  Future<void> call(String id) {
+    return repository.deletePayment(id);
+  }
 }
