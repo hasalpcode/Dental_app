@@ -5,5 +5,7 @@ class GetProjects {
   final ProjectRepository repository;
   GetProjects(this.repository);
 
-  List<ProjectEntity> call() => repository.getProjects();
+  Future<List<ProjectEntity>> call() async {
+    return await repository.getProjects();
+  }
 }

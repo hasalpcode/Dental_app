@@ -5,5 +5,7 @@ class UpdateProject {
   final ProjectRepository repository;
   UpdateProject(this.repository);
 
-  void call(ProjectEntity project) => repository.updateProject(project);
+  Future<ProjectEntity> call(ProjectEntity project) async {
+    return await repository.updateProject(project);
+  }
 }

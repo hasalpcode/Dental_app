@@ -4,27 +4,36 @@ import 'package:flutter/material.dart';
 class AddProjectModal extends StatefulWidget {
   final Function(ProjectEntity) onSubmit;
   final ProjectEntity? project;
-  final List<String> bureaus;
+  final List<int> bureaus; // ✅ IDs bureau
 
-  const AddProjectModal(
-      {super.key, required this.onSubmit, this.project, required this.bureaus});
+  const AddProjectModal({
+    super.key,
+    required this.onSubmit,
+    this.project,
+    required this.bureaus,
+  });
 
   @override
   State<AddProjectModal> createState() => _AddProjectModalState();
 }
 
 class _AddProjectModalState extends State<AddProjectModal> {
-  String? selectedBureau;
+  int? selectedBureau;
+
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
+  final budgetController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+
     if (widget.project != null) {
       selectedBureau = widget.project!.bureauId;
-      nameController.text = widget.project!.name;
-      descriptionController.text = widget.project!.description;
+
+      nameController.text = widget.project!.libelle;
+      descriptionController.text = widget.project!.description ?? '';
+      budgetController.text = widget.project!.budget?.toString() ?? '';
     }
   }
 
@@ -33,8 +42,9 @@ class _AddProjectModalState extends State<AddProjectModal> {
     return Center(
       child: Padding(
         padding: EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: MediaQuery.of(context).viewInsets.bottom + 20),
+          horizontal: 20,
+          vertical: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -49,18 +59,73 @@ class _AddProjectModalState extends State<AddProjectModal> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 30),
+
                     Text(
-                        widget.project == null ? "Add Project" : "Edit Project",
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
+                      widget.project == null ? "Add Project" : "Edit Project",
+                      style: const TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+
                     const SizedBox(height: 20),
 
-                    // Bureau dropdown
-                    DropdownButtonFormField<String>(
+                    // 🔹 NAME
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: "Project name",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // 🔹 DESCRIPTION
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: "Description",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // 🔹 BUDGET
+                    TextField(
+                      controller: budgetController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: "Budget",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // 🔹 BUREAU
+                    DropdownButtonFormField<int>(
                       value: selectedBureau,
                       items: widget.bureaus
-                          .map(
-                              (m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .map((b) => DropdownMenuItem(
+                                value: b,
+                                child: Text("Bureau $b"),
+                              ))
                           .toList(),
                       onChanged: (v) => setState(() => selectedBureau = v),
                       decoration: InputDecoration(
@@ -68,46 +133,56 @@ class _AddProjectModalState extends State<AddProjectModal> {
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            borderSide: BorderSide.none),
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 25),
 
+                    // 🔹 SAVE BUTTON
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (selectedBureau == null) return;
+                          if (nameController.text.isEmpty) return;
+
                           final project = ProjectEntity(
-                            id: widget.project?.id ?? DateTime.now().toString(),
-                            bureauId: selectedBureau!,
-                            name: nameController.text,
+                            projectId: widget.project?.projectId,
+                            libelle: nameController.text,
                             description: descriptionController.text,
+                            budget: double.tryParse(budgetController.text),
+                            bureauId: selectedBureau ?? null,
+                            status: widget.project?.status,
+                            dateCreation: widget.project?.dateCreation,
                           );
+
                           widget.onSubmit(project);
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15))),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
                         child: const Text("Save"),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
 
-              // Close button
+              // ❌ CLOSE BUTTON
               Positioned(
                 right: 0,
                 top: 0,
                 child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                    onPressed: () => Navigator.pop(context)),
-              )
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
             ],
           ),
         ),

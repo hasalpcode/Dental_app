@@ -15,6 +15,13 @@ class ProjectTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = project.libelle;
+    final description = project.description ?? '';
+    final bureau = project.bureauId?.toString() ?? "N/A";
+    final budget = project.budget != null
+        ? "${project.budget!.toStringAsFixed(0)} €"
+        : "No budget";
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -27,41 +34,63 @@ class ProjectTile extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // 🔹 Avatar
           CircleAvatar(
             radius: 28,
             backgroundColor: Colors.green.withOpacity(0.2),
             child: Text(
-              project.name[0],
+              title.isNotEmpty ? title[0].toUpperCase() : "?",
               style: const TextStyle(
-                  fontSize: 22,
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold),
+                fontSize: 22,
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
+
           const SizedBox(width: 16),
+
+          // 🔹 Infos
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(project.name,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4),
-                Text("${project.bureauId}",
-                    style: const TextStyle(color: Colors.grey)),
-                Text("${project.description}",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  "Bureau: $bureau",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  budget,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                if (description.isNotEmpty)
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),
+
+          // 🔹 Actions
           Row(
             children: [
               IconButton(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit, color: Colors.orange)),
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit, color: Colors.orange),
+              ),
               IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete, color: Colors.red)),
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete, color: Colors.red),
+              ),
             ],
           )
         ],

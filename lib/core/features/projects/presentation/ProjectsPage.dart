@@ -1,4 +1,4 @@
-import 'package:dental_app/core/features/projects/data/project_local_data_source.dart';
+import 'package:dental_app/core/features/projects/data/project_remote_data_source.dart';
 import 'package:dental_app/core/features/projects/data/project_repository_impl.dart';
 import 'package:dental_app/core/features/projects/domain/entity/project_entity.dart';
 import 'package:dental_app/core/features/projects/domain/usecases/add_project.dart';
@@ -9,6 +9,7 @@ import 'package:dental_app/core/features/projects/presentation/widgets/add_proje
 import 'package:dental_app/core/features/projects/presentation/widgets/projects_list.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
@@ -19,94 +20,128 @@ class ProjectsPage extends StatefulWidget {
 
 class _ProjectsPageState extends State<ProjectsPage> {
   late final ProjectRepositoryImpl repository;
-  late final GetProjects getProjects;
-  late final AddProject addProject;
-  late final UpdateProject updateProject;
-  late final DeleteProject deleteProject;
 
-  late List<ProjectEntity> projects;
+  late final GetProjects getProjectsUseCase;
+  late final AddProject addProjectUseCase;
+  late final UpdateProject updateProjectUseCase;
+  late final DeleteProject deleteProjectUseCase;
 
-  List<ProjectEntity> get filteredProjects {
-    return projects;
-  }
+  List<ProjectEntity> projects = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    final dataSource = ProjectLocalDataSource();
+
+    final client = http.Client();
+
+    final dataSource = ProjectRemoteDataSource();
     repository = ProjectRepositoryImpl(dataSource);
 
-    getProjects = GetProjects(repository);
-    addProject = AddProject(repository);
-    updateProject = UpdateProject(repository);
-    deleteProject = DeleteProject(repository);
+    getProjectsUseCase = GetProjects(repository);
+    addProjectUseCase = AddProject(repository);
+    updateProjectUseCase = UpdateProject(repository);
+    deleteProjectUseCase = DeleteProject(repository);
 
-    projects = getProjects();
+    _loadProjects();
   }
 
-  void _refresh() {
-    setState(() => projects = getProjects());
+  Future<void> _loadProjects() async {
+    setState(() => isLoading = true);
+
+    try {
+      final fetchedProjects = await getProjectsUseCase();
+
+      setState(() {
+        projects = fetchedProjects;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur récupération projets: $e')),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CurvedAppBar(title: "Projects"),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddModal,
-        child: const Icon(Icons.add),
-      ),
-      body: Column(
-        children: [
-          // 🔹 Filtre mois / année
-
-          // 🔹 Liste filtrée
-          Expanded(
-            child: ProjectsList(
-              projects: filteredProjects,
-              onEdit: _openEditModal,
-              onDelete: (id) {
-                deleteProject(id);
-                _refresh();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _refresh() async {
+    await _loadProjects();
   }
 
-  // 🔹 Modal ajout
   void _openAddModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
-        project: null,
-        bureaus: ["Bureau A", "Bureau B", "Bureau C"],
-        onSubmit: (p) {
-          addProject(p);
-          _refresh();
+        bureaus: [],
+        onSubmit: (p) async {
+          try {
+            await addProjectUseCase(p);
+            await _refresh();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erreur ajout projet: $e')),
+            );
+          }
         },
       ),
     );
   }
 
-  // 🔹 Modal édition
-  void _openEditModal(ProjectEntity Project) {
+  void _openEditModal(ProjectEntity project) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
-        project: Project,
-        bureaus: ["Bureau A", "Bureau B", "Bureau C"],
-        onSubmit: (p) {
-          updateProject(p);
-          _refresh();
+        project: project,
+        bureaus: [],
+        onSubmit: (p) async {
+          try {
+            await updateProjectUseCase(p);
+            await _refresh();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erreur modification projet: $e')),
+            );
+          }
         },
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const CurvedAppBar(title: "Projects"), // ✅ FIX
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openAddModal,
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : projects.isEmpty
+              ? const Center(child: Text("Aucun projet trouvé"))
+              : RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: ProjectsList(
+                    projects: projects,
+                    onEdit: _openEditModal,
+                    onDelete: (id) async {
+                      try {
+                        await deleteProjectUseCase(id);
+                        await _refresh();
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Erreur suppression projet: $e')),
+                        );
+                      }
+                    },
+                  ),
+                ),
     );
   }
 }

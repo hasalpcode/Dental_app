@@ -1,22 +1,33 @@
-import 'package:dental_app/core/features/projects/data/project_local_data_source.dart';
+import 'package:dental_app/core/features/projects/data/project_model.dart';
+import 'package:dental_app/core/features/projects/data/project_remote_data_source.dart';
 import 'package:dental_app/core/features/projects/domain/entity/project_entity.dart';
 import 'package:dental_app/core/features/projects/domain/repositories/project_repository.dart';
 
 class ProjectRepositoryImpl implements ProjectRepository {
-  final ProjectLocalDataSource dataSource;
+  final ProjectRemoteDataSource remoteDataSource;
 
-  ProjectRepositoryImpl(this.dataSource);
-
-  @override
-  List<ProjectEntity> getProjects() => dataSource.getProjects();
+  ProjectRepositoryImpl(this.remoteDataSource);
 
   @override
-  void addProject(ProjectEntity project) => dataSource.addProject(project);
+  Future<List<ProjectEntity>> getProjects() async {
+    return await remoteDataSource.getProjects();
+  }
 
   @override
-  void updateProject(ProjectEntity project) =>
-      dataSource.updateProject(project);
+  Future<ProjectEntity> addProject(ProjectEntity project) async {
+    return await remoteDataSource.addProject(
+      ProjectModel.fromEntity(project),
+    );
+  }
 
   @override
-  void deleteProject(String id) => dataSource.deleteProject(id);
+  Future<ProjectEntity> updateProject(ProjectEntity project) async {
+    return await remoteDataSource
+        .updateProject(ProjectModel.fromEntity(project));
+  }
+
+  @override
+  Future<void> deleteProject(int id) async {
+    await remoteDataSource.deleteProject(id);
+  }
 }

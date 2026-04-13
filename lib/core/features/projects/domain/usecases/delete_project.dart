@@ -4,5 +4,7 @@ class DeleteProject {
   final ProjectRepository repository;
   DeleteProject(this.repository);
 
-  void call(String id) => repository.deleteProject(id);
+  Future<void> call(int id) async {
+    await repository.deleteProject(id);
+  }
 }

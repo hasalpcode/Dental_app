@@ -5,5 +5,8 @@ class AddProject {
   final ProjectRepository repository;
   AddProject(this.repository);
 
-  void call(ProjectEntity project) => repository.addProject(project);
+  // void call(ProjectEntity project) => repository.addProject(project);
+  Future<ProjectEntity> call(ProjectEntity project) async {
+    return await repository.addProject(project);
+  }
 }

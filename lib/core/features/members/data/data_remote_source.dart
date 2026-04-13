@@ -9,7 +9,7 @@ class MemberRemoteDataSource {
 
   MemberRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://ed10-46-193-66-177.ngrok-free.app';
+  final String baseUrl = 'https://af1c-46-193-66-177.ngrok-free.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -20,28 +20,6 @@ class MemberRemoteDataSource {
       'Authorization': 'Bearer $token',
     };
   }
-
-  // Future<List<MemberModel>> getMembers() async {
-  //   final client = HttpClient();
-  //   client.badCertificateCallback =
-  //       (X509Certificate cert, String host, int port) => true;
-  //   final headers = await _getHeaders();
-  //   print('Fetching members with headers: $headers');
-  //   final request = await client
-  //         .postUrl(Uri.parse(
-  //             'https://9adc-46-193-66-177.ngrok-free.app/user-service/auth/login'))
-  //         .timeout(const Duration(seconds: 10));
-
-  //     request.headers.set(HttpHeaders.contentTypeHeader, "application/json");
-  //      final response = await request.close();
-
-  //   if (response.statusCode == 200) {
-  //     final List data = jsonDecode(response.body);
-  //     return data.map<MemberModel>((e) => MemberModel.fromJson(e)).toList();
-  //   } else {
-  //     throw Exception('Erreur récupération membres: ${response.statusCode}');
-  //   }
-  // }
 
   Future<List<MemberModel>> getMembers() async {
     final headers = await _getHeaders();

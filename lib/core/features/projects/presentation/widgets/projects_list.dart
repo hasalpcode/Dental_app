@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class ProjectsList extends StatelessWidget {
   final List<ProjectEntity> projects;
   final Function(ProjectEntity) onEdit;
-  final Function(String) onDelete;
+  final Function(int) onDelete;
 
   const ProjectsList({
     super.key,
@@ -16,15 +16,24 @@ class ProjectsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (projects.isEmpty) {
+      return const Center(child: Text("Aucun projet"));
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: projects.length,
       itemBuilder: (_, i) {
         final p = projects[i];
+
         return ProjectTile(
           project: p,
           onEdit: () => onEdit(p),
-          onDelete: () => onDelete(p.id),
+          onDelete: () {
+            if (p.projectId != null) {
+              onDelete(p.projectId!);
+            }
+          },
         );
       },
     );

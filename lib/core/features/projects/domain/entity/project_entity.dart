@@ -1,13 +1,19 @@
 class ProjectEntity {
-  final String id;
-  final String name;
-  final String description;
-  final String bureauId;
+  int? projectId;
+  String libelle;
+  String? status;
+  String? description;
+  double? budget;
+  int? bureauId;
+  DateTime? dateCreation;
 
   ProjectEntity({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.bureauId,
+    this.projectId,
+    required this.libelle,
+    this.status,
+    this.description,
+    this.bureauId,
+    this.budget,
+    this.dateCreation,
   });
 }
