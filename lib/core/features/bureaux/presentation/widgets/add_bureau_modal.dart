@@ -17,6 +17,7 @@ class _AddBureauModalState extends State<AddBureauModal> {
   String? selectedBureau;
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -25,6 +26,37 @@ class _AddBureauModalState extends State<AddBureauModal> {
       selectedBureau = widget.bureau!.bureauId;
       nameController.text = widget.bureau!.name;
       descriptionController.text = widget.bureau!.description;
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (selectedBureau == null) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final bureau = BureauEntity(
+        name: nameController.text,
+        description: descriptionController.text,
+        bureauId: selectedBureau!,
+      );
+      await widget.onSubmit(bureau);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -77,21 +109,19 @@ class _AddBureauModalState extends State<AddBureauModal> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedBureau == null) return;
-                          final bureau = BureauEntity(
-                            name: nameController.text,
-                            description: descriptionController.text,
-                            bureauId: selectedBureau!,
-                          );
-                          widget.onSubmit(bureau);
-                          Navigator.pop(context);
-                        },
+                        onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15))),
-                        child: const Text("Save"),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text("Save"),
                       ),
                     )
                   ],

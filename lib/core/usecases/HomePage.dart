@@ -79,8 +79,8 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _statCard(
-              "Balance", "€4,500", Icons.account_balance_wallet, Colors.green),
+          child: _statCard("Balance", "4,500 FCFA",
+              Icons.account_balance_wallet, Colors.green),
         ),
       ],
     );

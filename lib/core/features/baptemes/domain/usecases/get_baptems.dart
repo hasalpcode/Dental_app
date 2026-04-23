@@ -6,5 +6,5 @@ class GetBaptisms {
 
   GetBaptisms(this.repository);
 
-  List<Baptism> call() => repository.getBaptisms();
+  Future<List<Baptism>> call() async => await repository.getBaptisms();
 }

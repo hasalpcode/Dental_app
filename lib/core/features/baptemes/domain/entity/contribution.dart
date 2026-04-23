@@ -1,11 +1,9 @@
-import 'package:dental_app/core/features/members/domain/entity/member.dart';
-
 class Contribution {
-  final Member member;
-  final double amount;
+  final int membreId;
+  final double montant;
 
   Contribution({
-    required this.member,
-    required this.amount,
+    required this.membreId,
+    required this.montant,
   });
 }

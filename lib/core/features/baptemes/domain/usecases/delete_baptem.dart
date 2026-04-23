@@ -5,5 +5,5 @@ class DeleteBaptism {
 
   DeleteBaptism(this.repository);
 
-  void call(String id) => repository.deleteBaptism(id);
+  Future<void> call(String id) async => await repository.deleteBaptism(id);
 }

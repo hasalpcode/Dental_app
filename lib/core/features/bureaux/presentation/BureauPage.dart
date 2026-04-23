@@ -25,6 +25,7 @@ class _BureauPageState extends State<BureauPage> {
   late final DeleteBureau deleteBureau;
 
   late List<BureauEntity> bureaux;
+  bool isDeleting = false;
 
   List<BureauEntity> get filteredBureaux {
     return bureaux;
@@ -56,21 +57,66 @@ class _BureauPageState extends State<BureauPage> {
         onPressed: _openAddModal,
         child: const Icon(Icons.add),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // 🔹 Filtre mois / année
+          Column(
+            children: [
+              // 🔹 Filtre mois / année
 
-          // 🔹 Liste filtrée
-          Expanded(
-            child: BureauxList(
-              bureaux: filteredBureaux,
-              onEdit: _openEditModal,
-              onDelete: (id) {
-                deleteBureau(id);
-                _refresh();
-              },
-            ),
+              // 🔹 Liste filtrée
+              Expanded(
+                child: BureauxList(
+                  bureaux: filteredBureaux,
+                  onEdit: _openEditModal,
+                  onDelete: (id) async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Confirmer la suppression'),
+                        content: const Text(
+                            'Êtes-vous sûr de vouloir supprimer ce bureau?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Annuler'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Supprimer'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed ?? false) {
+                      setState(() => isDeleting = true);
+                      try {
+                        deleteBureau(id);
+                        _refresh();
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Erreur: $e')),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() => isDeleting = false);
+                        }
+                      }
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
+          if (isDeleting)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
         ],
       ),
     );

@@ -39,6 +39,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
   Map<int, Member> memberMap = {};
 
   bool isLoading = true;
+  bool isDeleting = false;
 
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
@@ -111,64 +112,115 @@ class _PaymentsPageState extends State<PaymentsPage> {
         onPressed: _openAddModal,
         child: const Icon(Icons.add),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButton<int>(
-                          value: selectedMonth,
-                          isExpanded: true,
-                          items: List.generate(12, (i) => i + 1)
-                              .map((m) => DropdownMenuItem(
-                                    value: m,
-                                    child: Text("Mois $m"),
-                                  ))
-                              .toList(),
-                          onChanged: (v) => setState(() => selectedMonth = v!),
-                        ),
+      body: Stack(
+        children: [
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButton<int>(
+                              value: selectedMonth,
+                              isExpanded: true,
+                              items: List.generate(12, (i) => i + 1)
+                                  .map((m) => DropdownMenuItem(
+                                        value: m,
+                                        child: Text("Mois $m"),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setState(() => selectedMonth = v!),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButton<int>(
+                              value: selectedYear,
+                              isExpanded: true,
+                              items: years
+                                  .map((y) => DropdownMenuItem(
+                                        value: y,
+                                        child: Text("$y"),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setState(() => selectedYear = v!),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButton<int>(
-                          value: selectedYear,
-                          isExpanded: true,
-                          items: years
-                              .map((y) => DropdownMenuItem(
-                                    value: y,
-                                    child: Text("$y"),
-                                  ))
-                              .toList(),
-                          onChanged: (v) => setState(() => selectedYear = v!),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadData,
-                    child: PaymentsList(
-                      payments: filteredPayments,
-                      memberMap: memberMap,
-                      onEdit: (p) async {
-                        await updatePayment(p);
-                        await _loadData();
-                      },
-                      onDelete: (id) async {
-                        await deletePayment(id);
-                        await _loadData();
-                      },
                     ),
-                  ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _loadData,
+                        child: PaymentsList(
+                          payments: filteredPayments,
+                          memberMap: memberMap,
+                          onEdit: (p) async {
+                            await updatePayment(p);
+                            await _loadData();
+                          },
+                          onDelete: (id) async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Confirmer la suppression'),
+                                content: const Text(
+                                    'Êtes-vous sûr de vouloir supprimer ce paiement?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Annuler'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Supprimer'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed ?? false) {
+                              setState(() => isDeleting = true);
+                              try {
+                                await deletePayment(id);
+                                await _loadData();
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text('Erreur suppression: $e')),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => isDeleting = false);
+                                }
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+          if (isDeleting)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
             ),
+        ],
+      ),
     );
   }
 

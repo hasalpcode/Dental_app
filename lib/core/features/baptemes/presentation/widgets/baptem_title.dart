@@ -32,11 +32,11 @@ class BaptismTile extends StatelessWidget {
           child: Icon(Icons.church, color: Colors.white),
         ),
         title: Text(
-          baptism.title,
+          baptism.nomComplet,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          "${baptism.location} • ${_formatDate(baptism.date)}",
+          "${baptism.lieu} • ${_formatDate(baptism.dateCreation)}",
         ),
 
         // 🔥 menu actions

@@ -6,5 +6,5 @@ class UpdateBaptism {
 
   UpdateBaptism(this.repository);
 
-  void call(Baptism b) => repository.updateBaptism(b);
+  Future<Baptism> call(Baptism b) async => await repository.updateBaptism(b);
 }

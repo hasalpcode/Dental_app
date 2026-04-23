@@ -6,5 +6,5 @@ class GetBaptismById {
 
   GetBaptismById(this.repository);
 
-  Baptism call(String id) => repository.getBaptismById(id);
+  Future<Baptism> call(String id) async => await repository.getBaptismById(id);
 }

@@ -1,39 +1,43 @@
 import 'package:dental_app/core/features/baptemes/data/baptem_model.dart';
-import 'package:dental_app/core/features/baptemes/data/data_source_local_baptem.dart';
+import 'package:dental_app/core/features/baptemes/data/baptem_remote_data_source.dart';
 import 'package:dental_app/core/features/baptemes/domain/entity/bapteme_entity.dart';
 import 'package:dental_app/core/features/baptemes/domain/repository/baptem_repository.dart';
 
 class BaptismRepositoryImpl implements BaptismRepository {
-  final BaptismLocalDataSource dataSource;
+  final BaptismRemoteDataSource dataSource;
 
   BaptismRepositoryImpl(this.dataSource);
 
   @override
-  List<Baptism> getBaptisms() {
-    return dataSource.getBaptisms().map((e) => e.toEntity()).toList();
+  Future<List<Baptism>> getBaptisms() async {
+    final models = await dataSource.getBaptisms();
+    return models.map((e) => e.toEntity()).toList();
   }
 
   @override
-  void addBaptism(Baptism baptism) {
-    dataSource.addBaptism(
+  Future<Baptism> addBaptism(Baptism baptism) async {
+    final model = await dataSource.addBaptism(
       BaptismModel.fromEntity(baptism),
     );
+    return model.toEntity();
   }
 
   @override
-  void updateBaptism(Baptism baptism) {
-    dataSource.updateBaptism(
+  Future<Baptism> updateBaptism(Baptism baptism) async {
+    final model = await dataSource.updateBaptism(
       BaptismModel.fromEntity(baptism),
     );
+    return model.toEntity();
   }
 
   @override
-  void deleteBaptism(String id) {
-    dataSource.deleteBaptism(id);
+  Future<void> deleteBaptism(String id) async {
+    await dataSource.deleteBaptism(id);
   }
 
   @override
-  Baptism getBaptismById(String id) {
-    return dataSource.getBaptismById(id).toEntity();
+  Future<Baptism> getBaptismById(String id) async {
+    final model = await dataSource.getBaptismById(id);
+    return model.toEntity();
   }
 }

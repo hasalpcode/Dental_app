@@ -23,6 +23,7 @@ class _AddProjectModalState extends State<AddProjectModal> {
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final budgetController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -34,6 +35,43 @@ class _AddProjectModalState extends State<AddProjectModal> {
       nameController.text = widget.project!.libelle;
       descriptionController.text = widget.project!.description ?? '';
       budgetController.text = widget.project!.budget?.toString() ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    descriptionController.dispose();
+    budgetController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (nameController.text.isEmpty) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final project = ProjectEntity(
+        projectId: widget.project?.projectId,
+        libelle: nameController.text,
+        description: descriptionController.text,
+        budget: double.tryParse(budgetController.text),
+        bureauId: selectedBureau ?? null,
+        status: widget.project?.status,
+        dateCreation: widget.project?.dateCreation,
+      );
+
+      await widget.onSubmit(project);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -145,29 +183,21 @@ class _AddProjectModalState extends State<AddProjectModal> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (nameController.text.isEmpty) return;
-
-                          final project = ProjectEntity(
-                            projectId: widget.project?.projectId,
-                            libelle: nameController.text,
-                            description: descriptionController.text,
-                            budget: double.tryParse(budgetController.text),
-                            bureauId: selectedBureau ?? null,
-                            status: widget.project?.status,
-                            dateCreation: widget.project?.dateCreation,
-                          );
-
-                          widget.onSubmit(project);
-                          Navigator.pop(context);
-                        },
+                        onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        child: const Text("Save"),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text("Save"),
                       ),
                     ),
                   ],

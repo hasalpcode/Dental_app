@@ -21,6 +21,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
   String? selectedMember;
   final amountController = TextEditingController();
   DateTime selectedDate = DateTime.now();
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -44,6 +45,34 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
 
   int _memberToId(String name) {
     return widget.members.indexOf(name) + 1;
+  }
+
+  Future<void> _submit() async {
+    if (selectedMember == null || amountController.text.isEmpty) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final payment = PaymentEntity(
+        id: widget.payment?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        memberIds: [_memberToId(selectedMember!)],
+        mois: "${selectedDate.month}",
+        montant: double.tryParse(amountController.text) ?? 0,
+        dateVersement: selectedDate,
+      );
+
+      await widget.onSubmit(payment);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -152,32 +181,21 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedMember == null ||
-                              amountController.text.isEmpty) return;
-
-                          final payment = PaymentEntity(
-                            id: widget.payment?.id ??
-                                DateTime.now()
-                                    .millisecondsSinceEpoch
-                                    .toString(),
-                            memberIds: [_memberToId(selectedMember!)],
-                            mois: "${selectedDate.month}",
-                            montant:
-                                double.tryParse(amountController.text) ?? 0,
-                            dateVersement: selectedDate,
-                          );
-
-                          widget.onSubmit(payment);
-                          Navigator.pop(context);
-                        },
+                        onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        child: const Text("Save"),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text("Save"),
                       ),
                     ),
                   ],

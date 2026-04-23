@@ -27,6 +27,7 @@ class _MembersPageState extends State<MembersPage> {
 
   List<Member> members = [];
   bool isLoading = true;
+  bool isDeleting = false;
 
   @override
   void initState() {
@@ -115,25 +116,64 @@ class _MembersPageState extends State<MembersPage> {
         child: const Icon(Icons.add),
         backgroundColor: Colors.green,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _refresh,
-              child: MembersList(
-                members: members,
-                onEdit: _openEditModal,
-                onDelete: (id) async {
-                  try {
-                    await deleteMemberUseCase(id);
-                    await _refresh();
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Erreur suppression membre: $e')),
-                    );
-                  }
-                },
+      body: Stack(
+        children: [
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: MembersList(
+                    members: members,
+                    onEdit: _openEditModal,
+                    onDelete: (id) async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Confirmer la suppression'),
+                          content: const Text(
+                              'Êtes-vous sûr de vouloir supprimer ce membre?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Annuler'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Supprimer'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed ?? false) {
+                        setState(() => isDeleting = true);
+                        try {
+                          await deleteMemberUseCase(id);
+                          await _refresh();
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Erreur suppression: $e')),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => isDeleting = false);
+                          }
+                        }
+                      }
+                    },
+                  ),
+                ),
+          if (isDeleting)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(),
               ),
             ),
+        ],
+      ),
     );
   }
 }

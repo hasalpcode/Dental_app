@@ -28,6 +28,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   List<ProjectEntity> projects = [];
   bool isLoading = true;
+  bool isDeleting = false;
 
   @override
   void initState() {
@@ -120,28 +121,68 @@ class _ProjectsPageState extends State<ProjectsPage> {
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : projects.isEmpty
-              ? const Center(child: Text("Aucun projet trouvé"))
-              : RefreshIndicator(
-                  onRefresh: _refresh,
-                  child: ProjectsList(
-                    projects: projects,
-                    onEdit: _openEditModal,
-                    onDelete: (id) async {
-                      try {
-                        await deleteProjectUseCase(id);
-                        await _refresh();
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('Erreur suppression projet: $e')),
-                        );
-                      }
-                    },
-                  ),
-                ),
+      body: Stack(
+        children: [
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : projects.isEmpty
+                  ? const Center(child: Text("Aucun projet trouvé"))
+                  : RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: ProjectsList(
+                        projects: projects,
+                        onEdit: _openEditModal,
+                        onDelete: (id) async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Confirmer la suppression'),
+                              content: const Text(
+                                  'Êtes-vous sûr de vouloir supprimer ce projet?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Annuler'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Supprimer'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirmed ?? false) {
+                            setState(() => isDeleting = true);
+                            try {
+                              await deleteProjectUseCase(id);
+                              await _refresh();
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text('Erreur suppression: $e')),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() => isDeleting = false);
+                              }
+                            }
+                          }
+                        },
+                      ),
+                    ),
+          if (isDeleting)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

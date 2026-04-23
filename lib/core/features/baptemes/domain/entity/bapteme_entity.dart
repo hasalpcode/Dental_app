@@ -2,16 +2,16 @@ import 'package:dental_app/core/features/baptemes/domain/entity/contribution.dar
 
 class Baptism {
   final String id;
-  final String title;
-  final DateTime date;
-  final String location;
+  final String nomComplet;
+  final DateTime dateCreation;
+  final String lieu;
   final List<Contribution> contributions;
 
   Baptism({
     required this.id,
-    required this.title,
-    required this.date,
-    required this.location,
+    required this.nomComplet,
+    required this.dateCreation,
+    required this.lieu,
     required this.contributions,
   });
 }
