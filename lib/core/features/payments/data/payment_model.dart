@@ -18,11 +18,9 @@ class PaymentModel {
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(
       id: json['versementId']?.toString() ?? json['id']?.toString(),
-      membreIds: json['membreIds'] != null
-          ? [json['membreIds'] as int]
-          : (json['membreIds'] != null
-              ? List<int>.from(json['membreIds'])
-              : []),
+      membreIds: json['membreId'] != null
+          ? [json['membreId'] as int]
+          : (json['membreId'] != null ? List<int>.from(json['membreId']) : []),
       mois: json['mois'] ?? '',
       montant: (json['montant'] as num).toDouble(),
       dateVersement: json['dateVersement'] != null
@@ -44,7 +42,7 @@ class PaymentModel {
   PaymentEntity toEntity() {
     return PaymentEntity(
       id: id,
-      memberIds: membreIds,
+      membreId: membreIds,
       mois: mois,
       montant: montant,
       dateVersement: dateVersement,
@@ -54,7 +52,7 @@ class PaymentModel {
   factory PaymentModel.fromEntity(PaymentEntity e) {
     return PaymentModel(
       id: e.id,
-      membreIds: e.memberIds,
+      membreIds: e.membreId,
       mois: e.mois,
       montant: e.montant,
       dateVersement: e.dateVersement,

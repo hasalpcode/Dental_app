@@ -28,8 +28,8 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
     super.initState();
 
     if (widget.payment != null) {
-      selectedMember = widget.payment!.memberIds.isNotEmpty
-          ? widget.members[widget.payment!.memberIds.first]
+      selectedMember = widget.payment!.membreId.isNotEmpty
+          ? widget.members[widget.payment!.membreId.first]
           : null;
 
       amountController.text = widget.payment!.montant.toString();
@@ -56,7 +56,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
       final payment = PaymentEntity(
         id: widget.payment?.id ??
             DateTime.now().millisecondsSinceEpoch.toString(),
-        memberIds: [_memberToId(selectedMember!)],
+        membreId: [_memberToId(selectedMember!)],
         mois: "${selectedDate.month}",
         montant: double.tryParse(amountController.text) ?? 0,
         dateVersement: selectedDate,

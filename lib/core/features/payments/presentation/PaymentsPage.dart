@@ -81,6 +81,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
       payments = results[0] as List<PaymentEntity>;
       members = results[1] as List<Member>;
+      print("Members==>: $members");
 
       // ✅ FIX IMPORTANT
       memberMap = {
@@ -93,6 +94,9 @@ class _PaymentsPageState extends State<PaymentsPage> {
       );
     } finally {
       setState(() => isLoading = false);
+      print("Membersmap==>: $memberMap");
+      print(
+          "Payments==>: ${payments.map((p) => 'id=${p.id}, membreId=${p.membreId}').toList()}");
     }
   }
 

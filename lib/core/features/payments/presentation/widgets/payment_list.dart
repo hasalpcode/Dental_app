@@ -24,6 +24,7 @@ class PaymentsList extends StatelessWidget {
       itemCount: payments.length,
       itemBuilder: (_, i) {
         final p = payments[i];
+        print("Building tile for payment: ${p.id}, membreId: ${p.membreId}");
 
         return PaymentTile(
           payment: p,

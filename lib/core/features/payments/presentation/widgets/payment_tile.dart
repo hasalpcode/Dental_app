@@ -18,10 +18,9 @@ class PaymentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final memberId =
-        payment.memberIds.isNotEmpty ? payment.memberIds.first : null;
+    final memberId = payment.membreId[0];
 
-    final member = (memberId != null) ? memberMap[memberId] : null;
+    final member = memberMap[memberId];
 
     final username = member?.username ?? "Unknown";
 
