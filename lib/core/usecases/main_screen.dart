@@ -20,6 +20,7 @@ class _MainScreenState extends State<MainScreen> {
     HomePage(),
     MembersPage(),
     PaymentsPage(),
+    RetraitPage(),
     ProjectsPage(),
     BureauPage(),
   ];
@@ -40,6 +41,9 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
               icon: Icon(Icons.payment, color: Colors.black),
               label: "Payments"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.money_off, color: Colors.black),
+              label: "Retraits"),
           BottomNavigationBarItem(
               icon: Icon(Icons.work, color: Colors.black), label: "Projects"),
           BottomNavigationBarItem(

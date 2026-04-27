@@ -2,9 +2,18 @@ import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/Baptemes_page.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
+import 'package:dental_app/core/features/payments/data/payment_remote_data_source.dart';
+import 'package:dental_app/core/features/payments/data/payment_repository_impl.dart';
+import 'package:dental_app/core/features/payments/domain/usecases/get_payments.dart';
+import 'package:dental_app/core/features/members/data/data_remote_source.dart';
+import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
+import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
+import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
+import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +25,20 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedYear = 2025;
 
+  late final PaymentRepositoryImpl paymentRepository;
+  late final MemberRepositoryImpl memberRepository;
+  late final GetPayments getPayments;
+  late final GetMembers getMembers;
+
+  List<PaymentEntity> payments = [];
+  List<Member> members = [];
+
+  int totalMembers = 0;
+  double totalBalance = 0;
+
+  bool isLoading = true;
+
+  // Fallback data
   final Map<int, List<double>> yearlyData = {
     2023: [400, 600, 900, 700, 1000, 800, 1200, 1300, 900, 1100, 1400, 1500],
     2024: [500, 800, 1200, 900, 1400, 1100, 1500, 1700, 1300, 1600, 1800, 2000],
@@ -36,37 +59,88 @@ class _HomePageState extends State<HomePage> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    final client = http.Client();
+
+    paymentRepository = PaymentRepositoryImpl(PaymentRemoteDataSource(client));
+    memberRepository = MemberRepositoryImpl(MemberRemoteDataSource(client));
+
+    getPayments = GetPayments(paymentRepository);
+    getMembers = GetMembers(memberRepository);
+
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+
+    try {
+      final results = await Future.wait([
+        getPayments(),
+        getMembers(),
+      ]);
+
+      payments = results[0] as List<PaymentEntity>;
+      members = results[1] as List<Member>;
+
+      // Calculate stats
+      totalMembers = members.length;
+      totalBalance = payments.fold(0, (sum, p) => sum + p.montant);
+
+      print("✅ Loaded ${totalMembers} members and ${payments.length} payments");
+    } catch (e) {
+      print("❌ Error loading data: $e");
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  List<double> _getMonthlyData(int year) {
+    // Initialize 12 months with 0
+    List<double> monthlyTotals = List.generate(12, (_) => 0);
+
+    // Sum payments by month for the selected year
+    for (var payment in payments) {
+      if (payment.dateVersement?.year == year) {
+        int month = payment.dateVersement!.month - 1;
+        monthlyTotals[month] += payment.montant;
+      }
+    }
+
+    return monthlyTotals;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
-
-      // 🔥 APP BAR
       appBar: CurvedAppBar(
           title: "DÉNTAL",
           option:
               auth.user != null ? "Bienvenue! ${auth.user!.username}" : null),
-
-      // 🔥 BODY
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildStatsRow(),
-            const SizedBox(height: 16),
-            _buildPaymentChart(),
-            const SizedBox(height: 20),
-            _buildSectionTitle("Quick Actions"),
-            const SizedBox(height: 12),
-            _buildQuickActions(),
-            const SizedBox(height: 20),
-            _buildSectionTitle("Recent Activity"),
-            const SizedBox(height: 12),
-            _buildActivityList(),
-          ],
-        ),
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildStatsRow(),
+                  const SizedBox(height: 16),
+                  _buildPaymentChart(),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle("Quick Actions"),
+                  const SizedBox(height: 12),
+                  _buildQuickActions(),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle("Recent Activity"),
+                  const SizedBox(height: 12),
+                  _buildActivityList(),
+                ],
+              ),
+            ),
     );
   }
 
@@ -75,11 +149,12 @@ class _HomePageState extends State<HomePage> {
     return Row(
       children: [
         Expanded(
-          child: _statCard("Members", "120", Icons.people, Colors.blue),
+          child: _statCard(
+              "Members", totalMembers.toString(), Icons.people, Colors.blue),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _statCard("Balance", "4,500 FCFA",
+          child: _statCard("Balance", "${totalBalance.toStringAsFixed(0)} FCFA",
               Icons.account_balance_wallet, Colors.green),
         ),
       ],
@@ -120,7 +195,9 @@ class _HomePageState extends State<HomePage> {
 
   // 🔹 CHART AVEC FILTRE
   Widget _buildPaymentChart() {
-    final data = yearlyData[selectedYear]!;
+    final data = _getMonthlyData(selectedYear);
+    final double maxY =
+        data.isEmpty ? 1000 : (data.reduce((a, b) => a > b ? a : b) * 1.2);
 
     return Container(
       width: double.infinity,
@@ -150,7 +227,7 @@ class _HomePageState extends State<HomePage> {
                 child: DropdownButton<int>(
                   value: selectedYear,
                   underline: const SizedBox(),
-                  items: yearlyData.keys.map((year) {
+                  items: [2023, 2024, 2025, 2026].map((year) {
                     return DropdownMenuItem(
                       value: year,
                       child: Text(year.toString()),
@@ -174,7 +251,7 @@ class _HomePageState extends State<HomePage> {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: 2500,
+                maxY: maxY > 0 ? maxY : 1000,
                 barTouchData: BarTouchData(enabled: true),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(

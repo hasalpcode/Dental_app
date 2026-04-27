@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
+import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 
-class PaymentTile extends StatelessWidget {
-  final PaymentEntity payment;
+class RetraitTile extends StatelessWidget {
+  final RetraitEntity retrait;
   final Map<int, Member> memberMap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const PaymentTile({
+  const RetraitTile({
     super.key,
-    required this.payment,
+    required this.retrait,
     required this.memberMap,
     required this.onEdit,
     required this.onDelete,
@@ -18,13 +18,11 @@ class PaymentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final memberId = payment.membreId[0];
-
-    final member = memberMap[memberId];
+    final member = memberMap[retrait.caissierId];
 
     final username = member?.username ?? "Unknown";
 
-    final date = payment.dateVersement;
+    final date = retrait.dateRetrait;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -39,7 +37,7 @@ class PaymentTile extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.green.withOpacity(0.2),
+            backgroundColor: Colors.red.withOpacity(0.2),
             child: Text(username.isNotEmpty ? username[0] : "?"),
           ),
           const SizedBox(width: 16),
@@ -54,8 +52,12 @@ class PaymentTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "${payment.montant} Fcfa",
+                  "${retrait.montant} Fcfa",
                   style: const TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  retrait.motif,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 Text(
                   date != null ? "${date.day}/${date.month}/${date.year}" : "",
