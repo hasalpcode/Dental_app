@@ -1,5 +1,6 @@
 import 'package:dental_app/core/usecases/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -98,10 +99,15 @@ class _LoginPageState extends State<LoginPage>
                           // EMAIL
                           TextField(
                             controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(9),
+                            ],
                             decoration: InputDecoration(
-                              hintText: "Email",
-                              prefixIcon: const Icon(Icons.email_outlined),
+                              hintText: "N° teléphone",
+                              prefixIcon:
+                                  const Icon(Icons.phone_android_outlined),
                               filled: true,
                               fillColor: Colors.grey.shade100,
                               border: OutlineInputBorder(
@@ -116,7 +122,12 @@ class _LoginPageState extends State<LoginPage>
                           // PASSWORD
                           TextField(
                             controller: passwordController,
+                            keyboardType: TextInputType.number,
                             obscureText: obscure,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(4),
+                            ],
                             decoration: InputDecoration(
                               hintText: "Mot de passe",
                               prefixIcon: const Icon(Icons.lock_outline),

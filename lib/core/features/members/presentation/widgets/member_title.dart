@@ -61,6 +61,11 @@ class MemberTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(member.tel,
                     style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                if (member.carteMembre != null && member.carteMembre!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text('Carte: ${member.carteMembre}',
+                      style: TextStyle(fontSize: 13, color: Colors.blue[700])),
+                ],
               ],
             ),
           ),

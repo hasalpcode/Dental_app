@@ -7,6 +7,7 @@ class Member {
   final String? bureauId;
   final String? posteId;
   final DateTime? dateAdhesion;
+  final String? carteMembre;
 
   Member({
     this.membreId,
@@ -17,5 +18,6 @@ class Member {
     this.bureauId,
     this.posteId,
     this.dateAdhesion,
+    this.carteMembre,
   });
 }

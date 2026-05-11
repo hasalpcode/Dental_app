@@ -110,7 +110,7 @@ class _AddProjectModalState extends State<AddProjectModal> {
                     TextField(
                       controller: nameController,
                       decoration: InputDecoration(
-                        labelText: "Project name",
+                        labelText: "Nom du projet",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
@@ -197,7 +197,7 @@ class _AddProjectModalState extends State<AddProjectModal> {
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Text("Save"),
+                            : const Text("Enregistrer"),
                       ),
                     ),
                   ],

@@ -6,6 +6,8 @@ import 'package:dental_app/core/features/payments/domain/usecases/add_payment.da
 import 'package:dental_app/core/features/payments/domain/usecases/delete_payment.dart';
 import 'package:dental_app/core/features/payments/domain/usecases/get_payments.dart';
 import 'package:dental_app/core/features/payments/domain/usecases/update_payment.dart';
+import 'package:dental_app/core/features/payments/presentation/bloc/payments_cubit.dart';
+import 'package:dental_app/core/features/payments/presentation/bloc/payments_state.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/add_payment_modal.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/payment_list.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
@@ -13,6 +15,7 @@ import 'package:dental_app/core/features/members/domain/usecases/get_members.dar
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 
 class PaymentsPage extends StatefulWidget {
@@ -32,14 +35,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
   late final DeletePayment deletePayment;
 
   late final GetMembers getMembers;
-
-  List<PaymentEntity> payments = [];
-  List<Member> members = [];
-
-  Map<int, Member> memberMap = {};
-
-  bool isLoading = true;
-  bool isDeleting = false;
+  late final PaymentsCubit paymentsCubit;
 
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
@@ -67,41 +63,29 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
     getMembers = GetMembers(memberRepository);
 
-    _loadData();
+    paymentsCubit = PaymentsCubit(
+      getPayments,
+      getMembers,
+      addPayment,
+      updatePayment,
+      deletePayment,
+    );
+
+    paymentsCubit.loadData();
+  }
+
+  @override
+  void dispose() {
+    paymentsCubit.close();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
-    setState(() => isLoading = true);
-
-    try {
-      final results = await Future.wait([
-        getPayments(),
-        getMembers(),
-      ]);
-
-      payments = results[0] as List<PaymentEntity>;
-      members = results[1] as List<Member>;
-      print("Members==>: $members");
-
-      // ✅ FIX IMPORTANT
-      memberMap = {
-        for (final m in members)
-          if (m.membreId != null) m.membreId!: m,
-      };
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur: $e")),
-      );
-    } finally {
-      setState(() => isLoading = false);
-      print("Membersmap==>: $memberMap");
-      print(
-          "Payments==>: ${payments.map((p) => 'id=${p.id}, membreId=${p.membreId}').toList()}");
-    }
+    await paymentsCubit.loadData();
   }
 
   List<PaymentEntity> get filteredPayments {
-    return payments.where((p) {
+    return paymentsCubit.state.payments.where((p) {
       final d = p.dateVersement;
       if (d == null) return false;
       return d.month == selectedMonth && d.year == selectedYear;
@@ -110,120 +94,115 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CurvedAppBar(title: "Payments"),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddModal,
-        child: const Icon(Icons.add),
-      ),
-      body: Stack(
-        children: [
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(
+    return BlocProvider.value(
+      value: paymentsCubit,
+      child: BlocBuilder<PaymentsCubit, PaymentsState>(
+        builder: (context, state) {
+          return Scaffold(
+            appBar: const CurvedAppBar(title: "Paiements"),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _openAddModal,
+              child: const Icon(Icons.add),
+            ),
+            body: Stack(
+              children: [
+                state.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
                         children: [
-                          Expanded(
-                            child: DropdownButton<int>(
-                              value: selectedMonth,
-                              isExpanded: true,
-                              items: List.generate(12, (i) => i + 1)
-                                  .map((m) => DropdownMenuItem(
-                                        value: m,
-                                        child: Text("Mois $m"),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedMonth = v!),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButton<int>(
+                                    value: selectedMonth,
+                                    isExpanded: true,
+                                    items: List.generate(12, (i) => i + 1)
+                                        .map((m) => DropdownMenuItem(
+                                              value: m,
+                                              child: Text("Mois $m"),
+                                            ))
+                                        .toList(),
+                                    onChanged: (v) =>
+                                        setState(() => selectedMonth = v!),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: DropdownButton<int>(
+                                    value: selectedYear,
+                                    isExpanded: true,
+                                    items: years
+                                        .map((y) => DropdownMenuItem(
+                                              value: y,
+                                              child: Text("$y"),
+                                            ))
+                                        .toList(),
+                                    onChanged: (v) =>
+                                        setState(() => selectedYear = v!),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 12),
                           Expanded(
-                            child: DropdownButton<int>(
-                              value: selectedYear,
-                              isExpanded: true,
-                              items: years
-                                  .map((y) => DropdownMenuItem(
-                                        value: y,
-                                        child: Text("$y"),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setState(() => selectedYear = v!),
+                            child: RefreshIndicator(
+                              onRefresh: _loadData,
+                              child: PaymentsList(
+                                payments: filteredPayments,
+                                memberMap: state.memberMap,
+                                onEdit: (p) async {
+                                  await context
+                                      .read<PaymentsCubit>()
+                                      .updatePayment(p);
+                                },
+                                onDelete: (id) async {
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text(
+                                          'Confirmer la suppression'),
+                                      content: const Text(
+                                          'Êtes-vous sûr de vouloir supprimer ce paiement?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Annuler'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Supprimer'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirmed ?? false) {
+                                    await context
+                                        .read<PaymentsCubit>()
+                                        .deletePayment(id);
+                                  }
+                                },
+                              ),
                             ),
                           ),
                         ],
                       ),
+                if (state.isDeleting)
+                  Container(
+                    color: Colors.black26,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
                     ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: PaymentsList(
-                          payments: filteredPayments,
-                          memberMap: memberMap,
-                          onEdit: (p) async {
-                            await updatePayment(p);
-                            await _loadData();
-                          },
-                          onDelete: (id) async {
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Confirmer la suppression'),
-                                content: const Text(
-                                    'Êtes-vous sûr de vouloir supprimer ce paiement?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Annuler'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: const Text('Supprimer'),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirmed ?? false) {
-                              setState(() => isDeleting = true);
-                              try {
-                                await deletePayment(id);
-                                await _loadData();
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text('Erreur suppression: $e')),
-                                  );
-                                }
-                              } finally {
-                                if (mounted) {
-                                  setState(() => isDeleting = false);
-                                }
-                              }
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-          if (isDeleting)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+                  ),
+              ],
             ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -234,10 +213,9 @@ class _PaymentsPageState extends State<PaymentsPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddPaymentModal(
-        members: members.map((e) => e.username).toList(),
+        members: paymentsCubit.state.members.map((e) => e.username).toList(),
         onSubmit: (p) async {
-          await addPayment(p);
-          await _loadData();
+          await paymentsCubit.addPayment(p);
         },
       ),
     );

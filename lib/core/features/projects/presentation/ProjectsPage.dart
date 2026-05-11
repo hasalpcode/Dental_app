@@ -5,11 +5,13 @@ import 'package:dental_app/core/features/projects/domain/usecases/add_project.da
 import 'package:dental_app/core/features/projects/domain/usecases/delete_project.dart';
 import 'package:dental_app/core/features/projects/domain/usecases/get_projects.dart';
 import 'package:dental_app/core/features/projects/domain/usecases/update_project.dart';
+import 'package:dental_app/core/features/projects/presentation/bloc/projects_cubit.dart';
+import 'package:dental_app/core/features/projects/presentation/bloc/projects_state.dart';
 import 'package:dental_app/core/features/projects/presentation/widgets/add_project_modal.dart';
 import 'package:dental_app/core/features/projects/presentation/widgets/projects_list.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
@@ -20,21 +22,15 @@ class ProjectsPage extends StatefulWidget {
 
 class _ProjectsPageState extends State<ProjectsPage> {
   late final ProjectRepositoryImpl repository;
-
   late final GetProjects getProjectsUseCase;
   late final AddProject addProjectUseCase;
   late final UpdateProject updateProjectUseCase;
   late final DeleteProject deleteProjectUseCase;
-
-  List<ProjectEntity> projects = [];
-  bool isLoading = true;
-  bool isDeleting = false;
+  late final ProjectsCubit projectsCubit;
 
   @override
   void initState() {
     super.initState();
-
-    final client = http.Client();
 
     final dataSource = ProjectRemoteDataSource();
     repository = ProjectRepositoryImpl(dataSource);
@@ -44,29 +40,24 @@ class _ProjectsPageState extends State<ProjectsPage> {
     updateProjectUseCase = UpdateProject(repository);
     deleteProjectUseCase = DeleteProject(repository);
 
-    _loadProjects();
+    projectsCubit = ProjectsCubit(
+      getProjectsUseCase,
+      addProjectUseCase,
+      updateProjectUseCase,
+      deleteProjectUseCase,
+    );
+
+    projectsCubit.loadProjects();
   }
 
-  Future<void> _loadProjects() async {
-    setState(() => isLoading = true);
-
-    try {
-      final fetchedProjects = await getProjectsUseCase();
-
-      setState(() {
-        projects = fetchedProjects;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur récupération projets: $e')),
-      );
-    } finally {
-      setState(() => isLoading = false);
-    }
+  @override
+  void dispose() {
+    projectsCubit.close();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
-    await _loadProjects();
+    await projectsCubit.loadProjects();
   }
 
   void _openAddModal() {
@@ -78,12 +69,13 @@ class _ProjectsPageState extends State<ProjectsPage> {
         bureaus: [],
         onSubmit: (p) async {
           try {
-            await addProjectUseCase(p);
-            await _refresh();
+            await projectsCubit.addProject(p);
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erreur ajout projet: $e')),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur ajout projet: $e')),
+              );
+            }
           }
         },
       ),
@@ -100,12 +92,13 @@ class _ProjectsPageState extends State<ProjectsPage> {
         bureaus: [],
         onSubmit: (p) async {
           try {
-            await updateProjectUseCase(p);
-            await _refresh();
+            await projectsCubit.updateProject(p);
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erreur modification projet: $e')),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur modification projet: $e')),
+              );
+            }
           }
         },
       ),
@@ -114,74 +107,70 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CurvedAppBar(title: "Projects"), // ✅ FIX
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddModal,
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add),
-      ),
-      body: Stack(
-        children: [
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : projects.isEmpty
-                  ? const Center(child: Text("Aucun projet trouvé"))
-                  : RefreshIndicator(
-                      onRefresh: _refresh,
-                      child: ProjectsList(
-                        projects: projects,
-                        onEdit: _openEditModal,
-                        onDelete: (id) async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Confirmer la suppression'),
-                              content: const Text(
-                                  'Êtes-vous sûr de vouloir supprimer ce projet?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Annuler'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Supprimer'),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (confirmed ?? false) {
-                            setState(() => isDeleting = true);
-                            try {
-                              await deleteProjectUseCase(id);
-                              await _refresh();
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text('Erreur suppression: $e')),
-                                );
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() => isDeleting = false);
-                              }
-                            }
-                          }
-                        },
-                      ),
-                    ),
-          if (isDeleting)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+    return BlocProvider.value(
+      value: projectsCubit,
+      child: BlocBuilder<ProjectsCubit, ProjectsState>(
+        builder: (context, state) {
+          return Scaffold(
+            appBar: const CurvedAppBar(title: "Projets"),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _openAddModal,
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.add),
             ),
-        ],
+            body: Stack(
+              children: [
+                state.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : state.projects.isEmpty
+                        ? const Center(child: Text("Aucun projet trouvé"))
+                        : RefreshIndicator(
+                            onRefresh: _refresh,
+                            child: ProjectsList(
+                              projects: state.projects,
+                              onEdit: _openEditModal,
+                              onDelete: (id) async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title:
+                                        const Text('Confirmer la suppression'),
+                                    content: const Text(
+                                        'Êtes-vous sûr de vouloir supprimer ce projet?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Annuler'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Supprimer'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirmed ?? false) {
+                                  await context
+                                      .read<ProjectsCubit>()
+                                      .deleteProject(id);
+                                }
+                              },
+                            ),
+                          ),
+                if (state.isDeleting)
+                  Container(
+                    color: Colors.black26,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

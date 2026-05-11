@@ -170,7 +170,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                               setState(() => selectedDate = picked);
                             }
                           },
-                          child: const Text("Pick Date"),
+                          child: const Text("Choisir la date"),
                         )
                       ],
                     ),
@@ -195,7 +195,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Text("Save"),
+                            : const Text("Enregistrer"),
                       ),
                     ),
                   ],

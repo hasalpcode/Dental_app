@@ -35,20 +35,21 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: Colors.deepPurple,
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard, color: Colors.black), label: "Home"),
+              icon: Icon(Icons.dashboard, color: Colors.black),
+              label: "Accueil"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.people, color: Colors.black), label: "Members"),
+              icon: Icon(Icons.people, color: Colors.black), label: "Membres"),
           BottomNavigationBarItem(
               icon: Icon(Icons.payment, color: Colors.black),
-              label: "Payments"),
+              label: "Paiements"),
           BottomNavigationBarItem(
               icon: Icon(Icons.money_off, color: Colors.black),
               label: "Retraits"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.work, color: Colors.black), label: "Projects"),
+              icon: Icon(Icons.work, color: Colors.black), label: "Projets"),
           BottomNavigationBarItem(
               icon: Icon(Icons.account_balance, color: Colors.black),
-              label: "Bureau"),
+              label: "Bureaux"),
         ],
       ),
     );

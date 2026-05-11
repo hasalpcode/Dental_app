@@ -121,7 +121,7 @@ class _AddBureauModalState extends State<AddBureauModal> {
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Text("Save"),
+                            : const Text("Enregistrer"),
                       ),
                     )
                   ],

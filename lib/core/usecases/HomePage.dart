@@ -131,11 +131,11 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 16),
                   _buildPaymentChart(),
                   const SizedBox(height: 20),
-                  _buildSectionTitle("Quick Actions"),
+                  _buildSectionTitle("Actions rapides"),
                   const SizedBox(height: 12),
                   _buildQuickActions(),
                   const SizedBox(height: 20),
-                  _buildSectionTitle("Recent Activity"),
+                  _buildSectionTitle("Activité récente"),
                   const SizedBox(height: 12),
                   _buildActivityList(),
                 ],
@@ -150,11 +150,11 @@ class _HomePageState extends State<HomePage> {
       children: [
         Expanded(
           child: _statCard(
-              "Members", totalMembers.toString(), Icons.people, Colors.blue),
+              "Membres", totalMembers.toString(), Icons.people, Colors.blue),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _statCard("Balance", "${totalBalance.toStringAsFixed(0)} FCFA",
+          child: _statCard("Solde", "${totalBalance.toStringAsFixed(0)} FCFA",
               Icons.account_balance_wallet, Colors.green),
         ),
       ],
@@ -216,7 +216,7 @@ class _HomePageState extends State<HomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Monthly Payments",
+              const Text("Paiements mensuels",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -330,10 +330,10 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _actionCard("Members", Icons.people, Colors.blue),
-          _actionCard("Payments", Icons.payment, Colors.green),
-          _actionCard("Projects", Icons.work, Colors.orange),
-          _actionCard("Bureau", Icons.account_balance, Colors.purple),
+          _actionCard("Membres", Icons.people, Colors.blue),
+          _actionCard("Paiements", Icons.payment, Colors.green),
+          _actionCard("Projets", Icons.work, Colors.orange),
+          _actionCard("Bureaux", Icons.account_balance, Colors.purple),
           _actionCard(
             "Baptêmes",
             Icons.church,
