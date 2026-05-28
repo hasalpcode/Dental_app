@@ -8,7 +8,7 @@ class RetraitRemoteDataSource {
   final http.Client client;
   RetraitRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://8be3-46-193-66-177.ngrok-free.app';
+  final String baseUrl = 'https://22f6-46-193-66-177.ngrok-free.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();

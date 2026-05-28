@@ -4,14 +4,16 @@ import 'package:flutter/material.dart';
 
 class BureauxList extends StatelessWidget {
   final List<BureauEntity> bureaux;
-  final Function(BureauEntity) onEdit;
-  final Function(String) onDelete;
+  final Function(BureauEntity) onDetails;
+  final Function(BureauEntity)? onEdit;
+  final Function(int)? onDelete;
 
   const BureauxList({
     super.key,
     required this.bureaux,
-    required this.onEdit,
-    required this.onDelete,
+    required this.onDetails,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -23,8 +25,9 @@ class BureauxList extends StatelessWidget {
         final p = bureaux[i];
         return BureauTile(
           project: p,
-          onEdit: () => onEdit(p),
-          onDelete: () => onDelete(p.bureauId),
+          onDetails: () => onDetails(p),
+          onEdit: onEdit != null ? () => onEdit!(p) : null,
+          onDelete: onDelete != null ? () => onDelete!(p.bureauId) : null,
         );
       },
     );

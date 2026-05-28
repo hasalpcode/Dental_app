@@ -23,7 +23,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int selectedYear = 2025;
+  int selectedYear = DateTime.now().year;
 
   late final PaymentRepositoryImpl paymentRepository;
   late final MemberRepositoryImpl memberRepository;
@@ -97,17 +97,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<double> _getMonthlyData(int year) {
-    // Initialize 12 months with 0
     List<double> monthlyTotals = List.generate(12, (_) => 0);
 
-    // Sum payments by month for the selected year
     for (var payment in payments) {
-      if (payment.dateVersement?.year == year) {
-        int month = payment.dateVersement!.month - 1;
-        monthlyTotals[month] += payment.montant;
+      // Use dateVersement.year if available, otherwise attribute to selected year
+      final paymentYear = payment.dateVersement?.year ?? year;
+      if (paymentYear != year) continue;
+
+      int? monthIndex;
+      if (payment.dateVersement != null) {
+        monthIndex = payment.dateVersement!.month - 1;
+      } else {
+        // Fallback: use mois string ("1".."12")
+        final moisInt = int.tryParse(payment.mois);
+        if (moisInt != null && moisInt >= 1 && moisInt <= 12) {
+          monthIndex = moisInt - 1;
+        }
+      }
+
+      if (monthIndex != null) {
+        monthlyTotals[monthIndex] += payment.montant;
       }
     }
 
+    print("📊 Monthly data for $year: $monthlyTotals");
     return monthlyTotals;
   }
 
@@ -216,7 +229,7 @@ class _HomePageState extends State<HomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Paiements mensuels",
+              const Text("Versements mensuels",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -227,17 +240,13 @@ class _HomePageState extends State<HomePage> {
                 child: DropdownButton<int>(
                   value: selectedYear,
                   underline: const SizedBox(),
-                  items: [2023, 2024, 2025, 2026].map((year) {
-                    return DropdownMenuItem(
-                      value: year,
-                      child: Text(year.toString()),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedYear = value!;
-                    });
-                  },
+                  items: List.generate(4, (i) => DateTime.now().year - i)
+                      .map((year) => DropdownMenuItem(
+                            value: year,
+                            child: Text(year.toString()),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() => selectedYear = value!),
                 ),
               )
             ],
@@ -246,69 +255,88 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 20),
 
           // 📊 BAR CHART
-          SizedBox(
-            height: 220,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxY > 0 ? maxY : 1000,
-                barTouchData: BarTouchData(enabled: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const months = [
-                          "J",
-                          "F",
-                          "M",
-                          "A",
-                          "M",
-                          "J",
-                          "J",
-                          "A",
-                          "S",
-                          "O",
-                          "N",
-                          "D"
-                        ];
-                        return Text(months[value.toInt()]);
-                      },
+          if (data.every((v) => v == 0))
+            SizedBox(
+              height: 220,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bar_chart, size: 48, color: Colors.grey[300]),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Aucun paiement pour $selectedYear",
+                      style: TextStyle(color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: maxY > 0 ? maxY : 1000,
+                  barTouchData: BarTouchData(enabled: true),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles:
+                          SideTitles(showTitles: true, reservedSize: 40),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const months = [
+                            "J",
+                            "F",
+                            "M",
+                            "A",
+                            "M",
+                            "J",
+                            "J",
+                            "A",
+                            "S",
+                            "O",
+                            "N",
+                            "D"
+                          ];
+                          return Text(months[value.toInt()]);
+                        },
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  borderData: FlBorderData(show: false),
+                  gridData: FlGridData(show: true),
+                  barGroups: List.generate(data.length, (index) {
+                    return BarChartGroupData(
+                      x: index,
+                      barRods: [
+                        BarChartRodData(
+                          toY: data[index],
+                          width: 14,
+                          borderRadius: BorderRadius.circular(6),
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xff6A11CB),
+                              Color(0xff2575FC),
+                            ],
+                          ),
+                        )
+                      ],
+                    );
+                  }),
                 ),
-                borderData: FlBorderData(show: false),
-                gridData: FlGridData(show: true),
-                barGroups: List.generate(data.length, (index) {
-                  return BarChartGroupData(
-                    x: index,
-                    barRods: [
-                      BarChartRodData(
-                        toY: data[index],
-                        width: 14,
-                        borderRadius: BorderRadius.circular(6),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xff6A11CB),
-                            Color(0xff2575FC),
-                          ],
-                        ),
-                      )
-                    ],
-                  );
-                }),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -331,7 +359,7 @@ class _HomePageState extends State<HomePage> {
         scrollDirection: Axis.horizontal,
         children: [
           _actionCard("Membres", Icons.people, Colors.blue),
-          _actionCard("Paiements", Icons.payment, Colors.green),
+          _actionCard("Versements", Icons.payment, Colors.green),
           _actionCard("Projets", Icons.work, Colors.orange),
           _actionCard("Bureaux", Icons.account_balance, Colors.purple),
           _actionCard(

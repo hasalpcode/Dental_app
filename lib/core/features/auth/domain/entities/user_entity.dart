@@ -32,6 +32,9 @@ class Role {
 
   Role({required this.roleid, required this.name});
 
+  bool get isAdmin => name.toUpperCase() == 'ADMIN';
+  bool get isUser => name.toUpperCase() == 'USER';
+
   factory Role.fromJson(Map<String, dynamic> json) {
     return Role(
       roleid: json['roleid'],

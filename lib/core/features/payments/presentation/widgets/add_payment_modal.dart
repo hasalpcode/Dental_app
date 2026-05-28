@@ -1,10 +1,11 @@
+import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:flutter/material.dart';
 
 class AddPaymentModal extends StatefulWidget {
   final Function(PaymentEntity) onSubmit;
   final PaymentEntity? payment;
-  final List<String> members;
+  final List<Member> members;
 
   const AddPaymentModal({
     super.key,
@@ -18,7 +19,7 @@ class AddPaymentModal extends StatefulWidget {
 }
 
 class _AddPaymentModalState extends State<AddPaymentModal> {
-  String? selectedMember;
+  int? selectedMemberId;
   final amountController = TextEditingController();
   DateTime selectedDate = DateTime.now();
   bool _isSaving = false;
@@ -28,10 +29,9 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
     super.initState();
 
     if (widget.payment != null) {
-      selectedMember = widget.payment!.membreId.isNotEmpty
-          ? widget.members[widget.payment!.membreId.first]
+      selectedMemberId = widget.payment!.membreId.isNotEmpty
+          ? widget.payment!.membreId.first
           : null;
-
       amountController.text = widget.payment!.montant.toString();
       selectedDate = widget.payment!.dateVersement ?? DateTime.now();
     }
@@ -43,12 +43,8 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
     super.dispose();
   }
 
-  int _memberToId(String name) {
-    return widget.members.indexOf(name) + 1;
-  }
-
   Future<void> _submit() async {
-    if (selectedMember == null || amountController.text.isEmpty) return;
+    if (selectedMemberId == null || amountController.text.isEmpty) return;
 
     setState(() => _isSaving = true);
 
@@ -56,7 +52,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
       final payment = PaymentEntity(
         id: widget.payment?.id ??
             DateTime.now().millisecondsSinceEpoch.toString(),
-        membreId: [_memberToId(selectedMember!)],
+        membreId: [selectedMemberId!],
         mois: "${selectedDate.month}",
         montant: double.tryParse(amountController.text) ?? 0,
         dateVersement: selectedDate,
@@ -101,7 +97,9 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                     const SizedBox(height: 30),
 
                     Text(
-                      widget.payment == null ? "Add Payment" : "Edit Payment",
+                      widget.payment == null
+                          ? "Ajouter Paiement"
+                          : "Modifier Paiement",
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -111,17 +109,18 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                     const SizedBox(height: 20),
 
                     // MEMBER
-                    DropdownButtonFormField<String>(
-                      value: selectedMember,
+                    DropdownButtonFormField<int>(
+                      value: selectedMemberId,
                       items: widget.members
+                          .where((m) => m.membreId != null)
                           .map((m) => DropdownMenuItem(
-                                value: m,
-                                child: Text(m),
+                                value: m.membreId,
+                                child: Text(m.displayName),
                               ))
                           .toList(),
-                      onChanged: (v) => setState(() => selectedMember = v),
+                      onChanged: (v) => setState(() => selectedMemberId = v),
                       decoration: InputDecoration(
-                        labelText: "Member",
+                        labelText: "Membre",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
@@ -138,7 +137,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                       controller: amountController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: "Amount",
+                        labelText: "Montant",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(

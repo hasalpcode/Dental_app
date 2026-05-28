@@ -5,12 +5,12 @@ class BureauLocalDataSource {
     BureauEntity(
       name: "Bureau 1",
       description: "Description of Bureau 1",
-      bureauId: "Bureau1",
+      bureauId: 1,
     ),
     BureauEntity(
       name: "Bureau 2",
       description: "Description of Bureau 2",
-      bureauId: "Bureau2",
+      bureauId: 2,
     ),
   ];
 
@@ -23,7 +23,7 @@ class BureauLocalDataSource {
     if (index != -1) _bureaus[index] = bureau;
   }
 
-  void deleteBureau(String bureauId) {
+  void deleteBureau(int bureauId) {
     _bureaus.removeWhere((b) => b.bureauId == bureauId);
   }
 }

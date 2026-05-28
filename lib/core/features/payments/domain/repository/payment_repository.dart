@@ -3,7 +3,7 @@ import 'package:dental_app/core/features/payments/domain/entity/payments_entity.
 
 abstract class PaymentRepository {
   Future<List<PaymentEntity>> getPayments();
-  Future<PaymentEntity> addPayment(PaymentModel payment);
-  Future<PaymentEntity> updatePayment(PaymentModel payment);
+  Future<void> addPayment(PaymentModel payment);
+  Future<void> updatePayment(PaymentModel payment);
   Future<void> deletePayment(String id);
 }

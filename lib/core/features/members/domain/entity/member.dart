@@ -4,7 +4,7 @@ class Member {
   final String username;
   final String tel;
   final String address;
-  final String? bureauId;
+  final int? bureauId;
   final String? posteId;
   final DateTime? dateAdhesion;
   final String? carteMembre;
@@ -20,4 +20,11 @@ class Member {
     this.dateAdhesion,
     this.carteMembre,
   });
+
+  String get displayName {
+    if (carteMembre != null && carteMembre!.isNotEmpty) {
+      return '$username - ${carteMembre!}';
+    }
+    return username;
+  }
 }

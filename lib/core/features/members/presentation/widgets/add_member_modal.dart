@@ -168,6 +168,7 @@ class _AddMemberModalState extends State<AddMemberModal> {
                         onPressed: isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

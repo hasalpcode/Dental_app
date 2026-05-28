@@ -45,11 +45,8 @@ class RetraitTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  username,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                Text(member?.displayName ?? username,
+                    style: TextStyle(fontSize: 13, color: Colors.blue[700])),
                 const SizedBox(height: 4),
                 Text(
                   "${retrait.montant} Fcfa",

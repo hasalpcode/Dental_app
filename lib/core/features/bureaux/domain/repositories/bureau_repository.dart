@@ -4,5 +4,5 @@ abstract class BureauRepository {
   List<BureauEntity> getBureaus();
   void addBureau(BureauEntity bureau);
   void updateBureau(BureauEntity bureau);
-  void deleteBureau(String bureauId);
+  void deleteBureau(int bureauId);
 }

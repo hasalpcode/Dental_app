@@ -16,15 +16,13 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @override
-  Future<PaymentEntity> addPayment(PaymentModel payment) async {
-    final result = await dataSource.addPayment(payment);
-    return result.toEntity();
+  Future<void> addPayment(PaymentModel payment) {
+    return dataSource.addPayment(payment);
   }
 
   @override
-  Future<PaymentEntity> updatePayment(PaymentModel payment) async {
-    final result = await dataSource.updatePayment(payment);
-    return result.toEntity();
+  Future<void> updatePayment(PaymentModel payment) {
+    return dataSource.updatePayment(payment);
   }
 
   @override

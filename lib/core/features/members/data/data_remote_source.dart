@@ -9,7 +9,7 @@ class MemberRemoteDataSource {
 
   MemberRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://8be3-46-193-66-177.ngrok-free.app';
+  final String baseUrl = 'https://22f6-46-193-66-177.ngrok-free.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -49,7 +49,7 @@ class MemberRemoteDataSource {
       body: jsonEncode({
         "username": member.username,
         "email": member.username.toLowerCase(),
-        "password": "passer",
+        "password": "1234",
         "role": "USER",
       }),
     );
@@ -84,8 +84,9 @@ class MemberRemoteDataSource {
   Future<MemberModel> updateMember(MemberModel member) async {
     final headers = await _getHeaders();
 
+    print("Updating member with userId: ${member}");
     final response = await client.put(
-      Uri.parse('$baseUrl/member-service/api/membres/${member.userId}'),
+      Uri.parse('$baseUrl/member-service/api/membres/${member.membreId}'),
       headers: headers,
       body: jsonEncode(member.toJson()),
     );

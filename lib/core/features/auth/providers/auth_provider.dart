@@ -12,6 +12,9 @@ class AuthProvider extends ChangeNotifier {
   User? user;
   String? error;
 
+  bool get canModify => user?.role.isAdmin ?? false;
+  bool get isUser => user?.role.isUser ?? false;
+
   Future<bool> login(String email, String password) async {
     isLoading = true;
 

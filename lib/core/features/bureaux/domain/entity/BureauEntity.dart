@@ -1,5 +1,5 @@
 class BureauEntity {
-  final String bureauId;
+  final int bureauId;
   final String name;
   final String description;
 

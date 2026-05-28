@@ -41,7 +41,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
     final memberNames = <int, String>{};
     for (final member in members) {
       if (member.membreId != null) {
-        memberNames[member.membreId!] = member.username;
+        memberNames[member.membreId!] = member.displayName;
       }
     }
 

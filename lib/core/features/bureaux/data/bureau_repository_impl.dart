@@ -17,5 +17,5 @@ class BureauRepositoryImpl implements BureauRepository {
   void updateBureau(BureauEntity bureau) => dataSource.updateBureau(bureau);
 
   @override
-  void deleteBureau(String bureauId) => dataSource.deleteBureau(bureauId);
+  void deleteBureau(int bureauId) => dataSource.deleteBureau(bureauId);
 }

@@ -13,6 +13,8 @@ import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 
 class MembersPage extends StatefulWidget {
   const MembersPage({super.key});
@@ -76,11 +78,13 @@ class _MembersPageState extends State<MembersPage> {
       builder: (_) => AddMemberModal(
         onSubmit: (m) async {
           try {
-            await context.read<MembersCubit>().addMember(m);
+            await membersCubit.addMember(m);
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erreur ajout membre: $e')),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur ajout membre: $e')),
+              );
+            }
           }
         },
       ),
@@ -96,11 +100,13 @@ class _MembersPageState extends State<MembersPage> {
         member: member,
         onSubmit: (m) async {
           try {
-            await context.read<MembersCubit>().updateMember(m);
+            await membersCubit.updateMember(m);
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erreur modification membre: $e')),
-            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur modification membre: $e')),
+              );
+            }
           }
         },
       ),
@@ -113,6 +119,9 @@ class _MembersPageState extends State<MembersPage> {
       value: membersCubit,
       child: BlocBuilder<MembersCubit, MembersState>(
         builder: (context, state) {
+          final auth = Provider.of<AuthProvider>(context, listen: false);
+          final canModify = auth.canModify;
+
           return Scaffold(
             appBar: const CurvedAppBar(title: "Membres"),
             floatingActionButton: FloatingActionButton(
@@ -157,35 +166,39 @@ class _MembersPageState extends State<MembersPage> {
                               child: MembersList(
                                 members: state.members,
                                 searchQuery: searchQuery,
-                                onEdit: _openEditModal,
-                                onDelete: (id) async {
-                                  final confirmed = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Confirmer la suppression'),
-                                      content: const Text(
-                                          'Êtes-vous sûr de vouloir supprimer ce membre?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, false),
-                                          child: const Text('Annuler'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, true),
-                                          child: const Text('Supprimer'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
+                                onEdit: canModify ? _openEditModal : null,
+                                onDelete: canModify
+                                    ? (id) async {
+                                        final confirmed =
+                                            await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text(
+                                                'Confirmer la suppression'),
+                                            content: const Text(
+                                                'Êtes-vous sûr de vouloir supprimer ce membre?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, false),
+                                                child: const Text('Annuler'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    context, true),
+                                                child: const Text('Supprimer'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
 
-                                  if (confirmed ?? false) {
-                                    await context
-                                        .read<MembersCubit>()
-                                        .deleteMember(id);
-                                  }
-                                },
+                                        if (confirmed ?? false) {
+                                          await context
+                                              .read<MembersCubit>()
+                                              .deleteMember(id);
+                                        }
+                                      }
+                                    : null,
                               ),
                             ),
                     ),

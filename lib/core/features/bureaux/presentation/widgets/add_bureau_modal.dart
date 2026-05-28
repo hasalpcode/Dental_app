@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class AddBureauModal extends StatefulWidget {
   final Function(BureauEntity) onSubmit;
   final BureauEntity? bureau;
-  final List<String> bureaus;
+  final List<int> bureaus;
 
   const AddBureauModal(
       {super.key, required this.onSubmit, this.bureau, required this.bureaus});
@@ -14,14 +14,23 @@ class AddBureauModal extends StatefulWidget {
 }
 
 class _AddBureauModalState extends State<AddBureauModal> {
-  String? selectedBureau;
+  int? selectedBureau;
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   bool _isSaving = false;
 
+  late List<int> availableBureaus;
+
   @override
   void initState() {
     super.initState();
+    // Assurer que le bureauId du bureau en édition existe dans la liste
+    availableBureaus = List.from(widget.bureaus);
+    if (widget.bureau != null &&
+        !availableBureaus.contains(widget.bureau!.bureauId)) {
+      availableBureaus.add(widget.bureau!.bureauId);
+    }
+
     if (widget.bureau != null) {
       selectedBureau = widget.bureau!.bureauId;
       nameController.text = widget.bureau!.name;
@@ -87,11 +96,11 @@ class _AddBureauModalState extends State<AddBureauModal> {
                     const SizedBox(height: 20),
 
                     // Bureau dropdown
-                    DropdownButtonFormField<String>(
+                    DropdownButtonFormField<int>(
                       value: selectedBureau,
-                      items: widget.bureaus
-                          .map(
-                              (m) => DropdownMenuItem(value: m, child: Text(m)))
+                      items: availableBureaus
+                          .map((m) => DropdownMenuItem(
+                              value: m, child: Text(m.toString())))
                           .toList(),
                       onChanged: (v) => setState(() => selectedBureau = v),
                       decoration: InputDecoration(

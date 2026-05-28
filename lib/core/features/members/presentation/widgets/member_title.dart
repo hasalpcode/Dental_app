@@ -3,14 +3,14 @@ import '../../domain/entity/member.dart';
 
 class MemberTile extends StatelessWidget {
   final Member member;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const MemberTile({
     super.key,
     required this.member,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   });
 
   Color getAvatarColor(String name) {
@@ -55,28 +55,24 @@ class MemberTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(member.username,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(member.displayName,
+                    style: TextStyle(fontSize: 13, color: Colors.blue[700])),
                 const SizedBox(height: 4),
                 Text(member.tel,
                     style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-                if (member.carteMembre != null && member.carteMembre!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text('Carte: ${member.carteMembre}',
-                      style: TextStyle(fontSize: 13, color: Colors.blue[700])),
-                ],
               ],
             ),
           ),
           Row(
             children: [
-              IconButton(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit, color: Colors.orange)),
-              IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete, color: Colors.red)),
+              if (onEdit != null)
+                IconButton(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit, color: Colors.orange)),
+              if (onDelete != null)
+                IconButton(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete, color: Colors.red)),
             ],
           )
         ],

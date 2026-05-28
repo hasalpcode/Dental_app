@@ -18,12 +18,13 @@ class PaymentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (payment.membreId.isEmpty) return const SizedBox.shrink();
     final memberId = payment.membreId[0];
 
     final member = memberMap[memberId];
-
+    print("PaymentTile: memberId=$member");
     final username = member?.username ?? "Unknown";
-
+    final cartemembre = member?.carteMembre ?? "Unknown";
     final date = payment.dateVersement;
 
     return Container(
@@ -40,18 +41,16 @@ class PaymentTile extends StatelessWidget {
         children: [
           CircleAvatar(
             backgroundColor: Colors.green.withOpacity(0.2),
-            child: Text(username.isNotEmpty ? username[0] : "?"),
+            child:
+                Text(username.isNotEmpty ? username[0] + cartemembre[0] : "?"),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  username,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                Text(member?.displayName ?? username,
+                    style: TextStyle(fontSize: 13, color: Colors.blue[700])),
                 const SizedBox(height: 4),
                 Text(
                   "${payment.montant} Fcfa",

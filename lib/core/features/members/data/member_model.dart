@@ -7,7 +7,7 @@ class MemberModel extends Member {
     required String phone,
     required String address,
     int? userId,
-    String? bureauId,
+    int? bureauId,
     String? posteId,
     DateTime? dateAdhesion,
     String? carteMembre,
@@ -30,7 +30,7 @@ class MemberModel extends Member {
       name: json['username'] ?? '',
       phone: json['tel'] ?? '',
       address: json['adresse'] ?? '',
-      bureauId: json['bureauId']?.toString(),
+      bureauId: json['bureauId']?.toInt() ?? null,
       posteId: json['posteId']?.toString(),
       dateAdhesion: json['dateAdhesion'] != null
           ? DateTime.tryParse(json['dateAdhesion'])

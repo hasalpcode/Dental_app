@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 
 class MembersList extends StatelessWidget {
   final List<Member> members;
-  final Function(Member) onEdit;
-  final Function(int) onDelete;
+  final Function(Member)? onEdit;
+  final Function(int)? onDelete;
   final String searchQuery;
 
   const MembersList({
     super.key,
     required this.members,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
     this.searchQuery = '',
   });
 
@@ -30,7 +30,7 @@ class MembersList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayMembers = filteredMembers;
-    
+
     return LayoutBuilder(builder: (context, constraints) {
       final isWide = constraints.maxWidth > 600;
 
@@ -58,8 +58,10 @@ class MembersList extends StatelessWidget {
                   final member = displayMembers[i];
                   return MemberTile(
                     member: member,
-                    onEdit: () => onEdit(member),
-                    onDelete: () => onDelete(member.membreId!),
+                    onEdit: onEdit != null ? () => onEdit!(member) : null,
+                    onDelete: onDelete != null
+                        ? () => onDelete!(member.membreId!)
+                        : null,
                   );
                 },
               )
@@ -69,8 +71,10 @@ class MembersList extends StatelessWidget {
                   final member = displayMembers[i];
                   return MemberTile(
                     member: member,
-                    onEdit: () => onEdit(member),
-                    onDelete: () => onDelete(member.membreId!),
+                    onEdit: onEdit != null ? () => onEdit!(member) : null,
+                    onDelete: onDelete != null
+                        ? () => onDelete!(member.membreId!)
+                        : null,
                   );
                 },
               ),

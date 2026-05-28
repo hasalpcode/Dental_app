@@ -4,5 +4,5 @@ class DeleteBureau {
   final BureauRepository repository;
   DeleteBureau(this.repository);
 
-  void call(String bureauId) => repository.deleteBureau(bureauId);
+  void call(int bureauId) => repository.deleteBureau(bureauId);
 }

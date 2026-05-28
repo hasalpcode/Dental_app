@@ -47,6 +47,7 @@ class PaymentsCubit extends Cubit<PaymentsState> {
       await loadData();
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
+      rethrow;
     }
   }
 
@@ -57,6 +58,7 @@ class PaymentsCubit extends Cubit<PaymentsState> {
       await loadData();
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
+      rethrow;
     }
   }
 
@@ -64,7 +66,10 @@ class PaymentsCubit extends Cubit<PaymentsState> {
     emit(state.copyWith(isDeleting: true, error: null));
     try {
       await deletePaymentUseCase(id);
-      await loadData();
+      emit(state.copyWith(
+        isDeleting: false,
+        payments: state.payments.where((p) => p.id != id).toList(),
+      ));
     } catch (e) {
       emit(state.copyWith(isDeleting: false, error: e.toString()));
     }

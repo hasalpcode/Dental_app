@@ -8,7 +8,7 @@ class PaymentRemoteDataSource {
   final http.Client client;
   PaymentRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://8be3-46-193-66-177.ngrok-free.app';
+  final String baseUrl = 'https://22f6-46-193-66-177.ngrok-free.app';
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
     if (token == null) throw Exception('Utilisateur non connecté');
@@ -35,7 +35,7 @@ class PaymentRemoteDataSource {
     }
   }
 
-  Future<PaymentModel> addPayment(PaymentModel payment) async {
+  Future<void> addPayment(PaymentModel payment) async {
     print("Adding payment: ${payment.toJson()}");
     final response = await client.post(
       Uri.parse('$baseUrl/finance-service/api/versements'),
@@ -43,22 +43,24 @@ class PaymentRemoteDataSource {
       body: jsonEncode(payment.toJson()),
     );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return PaymentModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Erreur ajout versement: ${response.statusCode}'
-          '- ${response.body}');
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      print("Error response: ${response.statusCode} - ${response.body}");
+      throw Exception(
+          'Erreur ajout versement: ${response.statusCode} - ${response.body}');
     }
   }
 
-  Future<PaymentModel> updatePayment(PaymentModel payment) async {
+  Future<void> updatePayment(PaymentModel payment) async {
     final response = await client.put(
       Uri.parse('$baseUrl/finance-service/api/versements/${payment.id}'),
       headers: await _getHeaders(),
       body: jsonEncode(payment.toJson()),
     );
 
-    return PaymentModel.fromJson(jsonDecode(response.body));
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+          'Erreur modification versement: ${response.statusCode} - ${response.body}');
+    }
   }
 
   Future<void> deletePayment(String id) async {

@@ -151,11 +151,7 @@ class _RetraitPageState extends State<RetraitPage> {
                               child: RetraitList(
                                 retraits: _filteredRetraits(state.retraits),
                                 memberMap: state.memberMap,
-                                onEdit: (r) async {
-                                  await context
-                                      .read<RetraitCubit>()
-                                      .updateRetrait(r);
-                                },
+                                onEdit: (r) => _openEditModal(r),
                                 onDelete: (id) async {
                                   final confirmed = await showDialog<bool>(
                                     context: context,
@@ -211,9 +207,24 @@ class _RetraitPageState extends State<RetraitPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddRetraitModal(
-        members: retraitCubit.state.members.map((e) => e.username).toList(),
+        members: retraitCubit.state.members,
         onSubmit: (r) async {
           await retraitCubit.addRetrait(r);
+        },
+      ),
+    );
+  }
+
+  void _openEditModal(RetraitEntity retrait) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddRetraitModal(
+        members: retraitCubit.state.members,
+        retrait: retrait,
+        onSubmit: (r) async {
+          await retraitCubit.updateRetrait(r);
         },
       ),
     );

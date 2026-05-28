@@ -1,10 +1,11 @@
+import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
 import 'package:flutter/material.dart';
 
 class AddRetraitModal extends StatefulWidget {
   final Function(RetraitEntity) onSubmit;
   final RetraitEntity? retrait;
-  final List<String> members;
+  final List<Member> members;
 
   const AddRetraitModal({
     super.key,
@@ -18,7 +19,7 @@ class AddRetraitModal extends StatefulWidget {
 }
 
 class _AddRetraitModalState extends State<AddRetraitModal> {
-  String? selectedMember;
+  int? selectedCaissierId;
   final amountController = TextEditingController();
   final motifController = TextEditingController();
   DateTime selectedDate = DateTime.now();
@@ -29,8 +30,7 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
     super.initState();
 
     if (widget.retrait != null) {
-      selectedMember = widget.members[widget.retrait!.caissierId - 1];
-
+      selectedCaissierId = widget.retrait!.caissierId;
       amountController.text = widget.retrait!.montant.toString();
       motifController.text = widget.retrait!.motif;
       selectedDate = widget.retrait!.dateRetrait ?? DateTime.now();
@@ -44,12 +44,8 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
     super.dispose();
   }
 
-  int _memberToId(String name) {
-    return widget.members.indexOf(name) + 1;
-  }
-
   Future<void> _submit() async {
-    if (selectedMember == null ||
+    if (selectedCaissierId == null ||
         amountController.text.isEmpty ||
         motifController.text.isEmpty) return;
 
@@ -59,7 +55,7 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
       final retrait = RetraitEntity(
         retraitId:
             widget.retrait?.retraitId ?? DateTime.now().millisecondsSinceEpoch,
-        caissierId: _memberToId(selectedMember!),
+        caissierId: selectedCaissierId!,
         motif: motifController.text,
         montant: double.tryParse(amountController.text) ?? 0,
         dateRetrait: selectedDate,
@@ -115,16 +111,18 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
 
                     const SizedBox(height: 20),
 
-                    // MEMBER
-                    DropdownButtonFormField<String>(
-                      value: selectedMember,
+                    // CAISSIER
+                    DropdownButtonFormField<int>(
+                      value: selectedCaissierId,
                       items: widget.members
+                          .where((m) => m.membreId != null)
                           .map((m) => DropdownMenuItem(
-                                value: m,
-                                child: Text(m),
+                                value: m.membreId,
+                                child: Text(m.displayName),
                               ))
                           .toList(),
-                      onChanged: (v) => setState(() => selectedMember = v),
+                      onChanged: (v) =>
+                          setState(() => selectedCaissierId = v),
                       decoration: InputDecoration(
                         labelText: "Caissier",
                         filled: true,

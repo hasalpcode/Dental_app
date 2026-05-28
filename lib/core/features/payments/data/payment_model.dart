@@ -19,8 +19,10 @@ class PaymentModel {
     return PaymentModel(
       id: json['versementId']?.toString() ?? json['id']?.toString(),
       membreIds: json['membreId'] != null
-          ? [json['membreId'] as int]
-          : (json['membreId'] != null ? List<int>.from(json['membreId']) : []),
+          ? (json['membreId'] is List
+              ? List<int>.from(json['membreId'])
+              : [json['membreId'] as int])
+          : [],
       mois: json['mois'] ?? '',
       montant: (json['montant'] as num).toDouble(),
       dateVersement: json['dateVersement'] != null
@@ -31,7 +33,6 @@ class PaymentModel {
 
   Map<String, dynamic> toJson() {
     return {
-      "id": id,
       "membreIds": membreIds,
       "mois": mois,
       "montant": montant,

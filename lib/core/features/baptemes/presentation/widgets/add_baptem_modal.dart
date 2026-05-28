@@ -154,7 +154,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                               items: _members
                                   .map((member) => DropdownMenuItem(
                                         value: member.membreId,
-                                        child: Text(member.username),
+                                        child: Text(member.displayName),
                                       ))
                                   .toList(),
                               onChanged: (value) {
@@ -266,7 +266,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
         address: '',
       ),
     );
-    return member.username;
+    return member.displayName;
   }
 
   void _addContribution() {

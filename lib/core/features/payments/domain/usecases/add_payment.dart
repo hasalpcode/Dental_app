@@ -7,7 +7,7 @@ class AddPayment {
 
   AddPayment(this.repository);
 
-  Future<PaymentEntity> call(PaymentEntity payment) {
+  Future<void> call(PaymentEntity payment) {
     return repository.addPayment(
       PaymentModel.fromEntity(payment),
     );

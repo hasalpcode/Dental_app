@@ -36,6 +36,8 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
   late final GetMembers getMembers;
   late final PaymentsCubit paymentsCubit;
+  late TextEditingController searchController;
+  String searchQuery = '';
 
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
@@ -45,6 +47,10 @@ class _PaymentsPageState extends State<PaymentsPage> {
   @override
   void initState() {
     super.initState();
+    searchController = TextEditingController();
+    searchController.addListener(() {
+      setState(() => searchQuery = searchController.text);
+    });
 
     final client = http.Client();
 
@@ -76,6 +82,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
   @override
   void dispose() {
+    searchController.dispose();
     paymentsCubit.close();
     super.dispose();
   }
@@ -99,7 +106,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
       child: BlocBuilder<PaymentsCubit, PaymentsState>(
         builder: (context, state) {
           return Scaffold(
-            appBar: const CurvedAppBar(title: "Paiements"),
+            appBar: const CurvedAppBar(title: "Versements"),
             floatingActionButton: FloatingActionButton(
               onPressed: _openAddModal,
               child: const Icon(Icons.add),
@@ -110,6 +117,31 @@ class _PaymentsPageState extends State<PaymentsPage> {
                     ? const Center(child: CircularProgressIndicator())
                     : Column(
                         children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: TextField(
+                              controller: searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Rechercher par nom ou carte...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: searchQuery.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          searchController.clear();
+                                          setState(() => searchQuery = '');
+                                        },
+                                      )
+                                    : null,
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
@@ -153,11 +185,8 @@ class _PaymentsPageState extends State<PaymentsPage> {
                               child: PaymentsList(
                                 payments: filteredPayments,
                                 memberMap: state.memberMap,
-                                onEdit: (p) async {
-                                  await context
-                                      .read<PaymentsCubit>()
-                                      .updatePayment(p);
-                                },
+                                searchQuery: searchQuery,
+                                onEdit: (p) => _openEditModal(p),
                                 onDelete: (id) async {
                                   final confirmed = await showDialog<bool>(
                                     context: context,
@@ -213,9 +242,24 @@ class _PaymentsPageState extends State<PaymentsPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddPaymentModal(
-        members: paymentsCubit.state.members.map((e) => e.username).toList(),
+        members: paymentsCubit.state.members,
         onSubmit: (p) async {
           await paymentsCubit.addPayment(p);
+        },
+      ),
+    );
+  }
+
+  void _openEditModal(PaymentEntity payment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddPaymentModal(
+        members: paymentsCubit.state.members,
+        payment: payment,
+        onSubmit: (p) async {
+          await paymentsCubit.updatePayment(p);
         },
       ),
     );

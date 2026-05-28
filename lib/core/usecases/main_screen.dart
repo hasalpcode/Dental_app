@@ -41,7 +41,7 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.people, color: Colors.black), label: "Membres"),
           BottomNavigationBarItem(
               icon: Icon(Icons.payment, color: Colors.black),
-              label: "Paiements"),
+              label: "Versements"),
           BottomNavigationBarItem(
               icon: Icon(Icons.money_off, color: Colors.black),
               label: "Retraits"),
