@@ -61,17 +61,12 @@ class _LoginPageState extends State<LoginPage>
                 child: Column(
                   children: [
                     // 🔷 LOGO
-                    const Text(
-                      "DÉNTAL",
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 3,
-                      ),
+                    Image.asset(
+                      'assets/img/logo_dental.jpeg',
+                      height: 120,
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
 
                     const Text(
                       "Bienvenue 👋",

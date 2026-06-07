@@ -9,9 +9,12 @@ import 'package:dental_app/core/features/projects/presentation/bloc/projects_cub
 import 'package:dental_app/core/features/projects/presentation/bloc/projects_state.dart';
 import 'package:dental_app/core/features/projects/presentation/widgets/add_project_modal.dart';
 import 'package:dental_app/core/features/projects/presentation/widgets/projects_list.dart';
+import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
+import 'package:dental_app/core/features/projects/presentation/ProjectDetailPage.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
@@ -107,17 +110,25 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final canModify =
+        Provider.of<AuthProvider>(context, listen: false).canModify;
+
     return BlocProvider.value(
       value: projectsCubit,
       child: BlocBuilder<ProjectsCubit, ProjectsState>(
         builder: (context, state) {
+          for (var p in state.projects) {
+            print("Project: ${p.libelle}, ID: ${p.projectId}");
+          }
           return Scaffold(
             appBar: const CurvedAppBar(title: "Projets"),
-            floatingActionButton: FloatingActionButton(
-              onPressed: _openAddModal,
-              backgroundColor: Colors.green,
-              child: const Icon(Icons.add),
-            ),
+            floatingActionButton: canModify
+                ? FloatingActionButton(
+                    onPressed: _openAddModal,
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.add),
+                  )
+                : null,
             body: Stack(
               children: [
                 state.isLoading
@@ -128,36 +139,44 @@ class _ProjectsPageState extends State<ProjectsPage> {
                             onRefresh: _refresh,
                             child: ProjectsList(
                               projects: state.projects,
-                              onEdit: _openEditModal,
-                              onDelete: (id) async {
-                                final confirmed = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title:
-                                        const Text('Confirmer la suppression'),
-                                    content: const Text(
-                                        'Êtes-vous sûr de vouloir supprimer ce projet?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Annuler'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text('Supprimer'),
-                                      ),
-                                    ],
-                                  ),
-                                );
+                              onTap: (p) => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProjectDetailPage(project: p),
+                                ),
+                              ),
+                              onEdit: canModify ? _openEditModal : null,
+                              onDelete: canModify
+                                  ? (id) async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text(
+                                              'Confirmer la suppression'),
+                                          content: const Text(
+                                              'Êtes-vous sûr de vouloir supprimer ce projet?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text('Annuler'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              child: const Text('Supprimer'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
 
-                                if (confirmed ?? false) {
-                                  await context
-                                      .read<ProjectsCubit>()
-                                      .deleteProject(id);
-                                }
-                              },
+                                      if (confirmed ?? false) {
+                                        await context
+                                            .read<ProjectsCubit>()
+                                            .deleteProject(id);
+                                      }
+                                    }
+                                  : null,
                             ),
                           ),
                 if (state.isDeleting)

@@ -124,11 +124,13 @@ class _MembersPageState extends State<MembersPage> {
 
           return Scaffold(
             appBar: const CurvedAppBar(title: "Membres"),
-            floatingActionButton: FloatingActionButton(
-              onPressed: _openAddModal,
-              child: const Icon(Icons.add),
-              backgroundColor: Colors.green,
-            ),
+            floatingActionButton: canModify
+                ? FloatingActionButton(
+                    onPressed: _openAddModal,
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.add),
+                  )
+                : null,
             body: Stack(
               children: [
                 Column(

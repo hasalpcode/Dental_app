@@ -6,15 +6,15 @@ import 'retrait_tile.dart';
 class RetraitList extends StatelessWidget {
   final List<RetraitEntity> retraits;
   final Map<int, Member> memberMap;
-  final Function(RetraitEntity) onEdit;
-  final Function(String) onDelete;
+  final Function(RetraitEntity)? onEdit;
+  final Function(String)? onDelete;
 
   const RetraitList({
     super.key,
     required this.retraits,
     required this.memberMap,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -28,13 +28,15 @@ class RetraitList extends StatelessWidget {
         return RetraitTile(
           retrait: r,
           memberMap: memberMap,
-          onEdit: () => onEdit(r),
-          onDelete: () {
-            final id = r.retraitId?.toString();
-            if (id != null && id.isNotEmpty) {
-              onDelete(id);
-            }
-          },
+          onEdit: onEdit != null ? () => onEdit!(r) : null,
+          onDelete: onDelete != null
+              ? () {
+                  final id = r.retraitId?.toString();
+                  if (id != null && id.isNotEmpty) {
+                    onDelete!(id);
+                  }
+                }
+              : null,
         );
       },
     );

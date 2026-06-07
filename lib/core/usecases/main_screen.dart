@@ -2,7 +2,6 @@ import 'package:dental_app/core/features/bureaux/presentation/BureauPage.dart';
 import 'package:dental_app/core/features/members/presentation/MembersPage.dart';
 import 'package:dental_app/core/features/payments/presentation/PaymentsPage.dart';
 import 'package:dental_app/core/features/projects/presentation/ProjectsPage.dart';
-import 'package:dental_app/core/features/retrait/presentation/RetraitPage.dart';
 import 'package:dental_app/core/usecases/HomePage.dart';
 import 'package:flutter/material.dart';
 
@@ -20,9 +19,8 @@ class _MainScreenState extends State<MainScreen> {
     HomePage(),
     MembersPage(),
     PaymentsPage(),
-    RetraitPage(),
-    ProjectsPage(),
     BureauPage(),
+    ProjectsPage(),
   ];
 
   @override
@@ -35,21 +33,21 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: Colors.deepPurple,
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard, color: Colors.black),
+              icon: Icon(Icons.home_rounded, color: Colors.black),
               label: "Accueil"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.people, color: Colors.black), label: "Membres"),
+              icon: Icon(Icons.people_alt, color: Colors.black),
+              label: "Membres"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.payment, color: Colors.black),
-              label: "Versements"),
+              icon: Icon(Icons.account_balance_wallet_rounded,
+                  color: Colors.black),
+              label: "Finance"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.money_off, color: Colors.black),
-              label: "Retraits"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.work, color: Colors.black), label: "Projets"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance, color: Colors.black),
+              icon: Icon(Icons.corporate_fare, color: Colors.black),
               label: "Bureaux"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.folder_special_rounded, color: Colors.black),
+              label: "Projets"),
         ],
       ),
     );

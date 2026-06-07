@@ -149,8 +149,8 @@ class _HomePageState extends State<HomePage> {
                   _buildQuickActions(),
                   const SizedBox(height: 20),
                   _buildSectionTitle("Activité récente"),
-                  const SizedBox(height: 12),
-                  _buildActivityList(),
+                  // const SizedBox(height: 12),
+                  // _buildActivityList(),
                 ],
               ),
             ),
@@ -417,42 +417,42 @@ class _HomePageState extends State<HomePage> {
   }
 
   // 🔹 ACTIVITÉS
-  Widget _buildActivityList() {
-    final activities = [
-      "John paid monthly fee",
-      "New member added",
-      "Project created",
-    ];
+//   Widget _buildActivityList() {
+//     final activities = [
+//       "John paid monthly fee",
+//       "New member added",
+//       "Project created",
+//     ];
 
-    return Column(
-      children: activities.map((e) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 5),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child:
-                    const Icon(Icons.notifications, color: Colors.deepPurple),
-              ),
-              const SizedBox(width: 10),
-              Expanded(child: Text(e)),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
+//     return Column(
+//       children: activities.map((e) {
+//         return Container(
+//           margin: const EdgeInsets.only(bottom: 10),
+//           padding: const EdgeInsets.all(14),
+//           decoration: BoxDecoration(
+//             color: Colors.white,
+//             borderRadius: BorderRadius.circular(18),
+//             boxShadow: const [
+//               BoxShadow(color: Colors.black12, blurRadius: 5),
+//             ],
+//           ),
+//           child: Row(
+//             children: [
+//               Container(
+//                 padding: const EdgeInsets.all(10),
+//                 decoration: BoxDecoration(
+//                   color: Colors.deepPurple.withOpacity(0.1),
+//                   shape: BoxShape.circle,
+//                 ),
+//                 child:
+//                     const Icon(Icons.notifications, color: Colors.deepPurple),
+//               ),
+//               const SizedBox(width: 10),
+//               Expanded(child: Text(e)),
+//             ],
+//           ),
+//         );
+//       }).toList(),
+//     );
+//   }
 }

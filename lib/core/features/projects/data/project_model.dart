@@ -22,7 +22,7 @@ class ProjectModel extends ProjectEntity {
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     return ProjectModel(
-      projectId: json['projectId']?.toInt() ?? null,
+      projectId: (json['projectId'] ?? json['id'])?.toInt(),
       libelle: json['libelle'].toString(),
       status: json['status'] ?? '',
       description: json['description'] ?? '',

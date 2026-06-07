@@ -59,10 +59,12 @@ class _BureauPageState extends State<BureauPage> {
 
     return Scaffold(
       appBar: const CurvedAppBar(title: "Bureaux"),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddModal,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canModify
+          ? FloatingActionButton(
+              onPressed: _openAddModal,
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Stack(
         children: [
           Column(
