@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 class BaptismsList extends StatelessWidget {
   final List<Baptism> baptisms;
-  final Function(Baptism) onEdit;
-  final Function(String) onDelete;
+  final Function(Baptism)? onEdit;
+  final Function(String)? onDelete;
 
   const BaptismsList({
     super.key,
     required this.baptisms,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -30,8 +30,8 @@ class BaptismsList extends StatelessWidget {
 
         return BaptismTile(
           baptism: b,
-          onEdit: () => onEdit(b),
-          onDelete: () => onDelete(b.id),
+          onEdit: onEdit != null ? () => onEdit!(b) : null,
+          onDelete: onDelete != null ? () => onDelete!(b.id) : null,
         );
       },
     );

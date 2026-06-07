@@ -40,9 +40,12 @@ class PaymentTile extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.green.withOpacity(0.2),
-            child:
-                Text(username.isNotEmpty ? username[0] + cartemembre[0] : "?"),
+            backgroundColor: const Color(0xff0b5260).withOpacity(0.15),
+            child: Text(
+              username.isNotEmpty ? username[0] + cartemembre[0] : "?",
+              style: const TextStyle(
+                  color: Color(0xff0b5260), fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(

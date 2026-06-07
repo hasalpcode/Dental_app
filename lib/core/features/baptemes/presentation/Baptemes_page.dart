@@ -1,7 +1,9 @@
+import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/widgets/add_baptem_modal.dart';
 import 'package:dental_app/core/features/baptemes/presentation/widgets/baptem_list.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 
@@ -72,15 +74,21 @@ class _BaptismPageState extends State<BaptismPage> {
 
   @override
   Widget build(BuildContext context) {
+    final canModify =
+        Provider.of<AuthProvider>(context, listen: false).canModify;
+
     return Scaffold(
       appBar: CurvedAppBar(
         title: "Baptêmes",
         leading: BackButton(onPressed: () => Navigator.pop(context)),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAddModal,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canModify
+          ? FloatingActionButton(
+              onPressed: _openAddModal,
+              backgroundColor: const Color(0xfff08024),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       body: Stack(
         children: [
           isLoading
@@ -89,45 +97,51 @@ class _BaptismPageState extends State<BaptismPage> {
                   onRefresh: _refresh,
                   child: BaptismsList(
                     baptisms: filteredBaptisms,
-                    onEdit: _openEditModal,
-                    onDelete: (id) async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Confirmer la suppression'),
-                          content: const Text(
-                              'Êtes-vous sûr de vouloir supprimer ce baptême?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Annuler'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Supprimer'),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirmed ?? false) {
-                        setState(() => isDeleting = true);
-                        try {
-                          await deleteBaptism(id);
-                          await _refresh();
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erreur suppression: $e')),
+                    onEdit: canModify ? _openEditModal : null,
+                    onDelete: canModify
+                        ? (id) async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Confirmer la suppression'),
+                                content: const Text(
+                                    'Êtes-vous sûr de vouloir supprimer ce baptême?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Annuler'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Supprimer'),
+                                  ),
+                                ],
+                              ),
                             );
+
+                            if (confirmed ?? false) {
+                              setState(() => isDeleting = true);
+                              try {
+                                await deleteBaptism(id);
+                                await _refresh();
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text('Erreur suppression: $e')),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => isDeleting = false);
+                                }
+                              }
+                            }
                           }
-                        } finally {
-                          if (mounted) {
-                            setState(() => isDeleting = false);
-                          }
-                        }
-                      }
-                    },
+                        : null,
                   ),
                 ),
           if (isDeleting)

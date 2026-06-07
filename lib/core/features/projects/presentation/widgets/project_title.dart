@@ -40,12 +40,12 @@ class ProjectTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: Colors.green.withOpacity(0.2),
+              backgroundColor: const Color(0xff0b5260).withOpacity(0.15),
               child: Text(
                 title.isNotEmpty ? title[0].toUpperCase() : "?",
                 style: const TextStyle(
                   fontSize: 22,
-                  color: Colors.green,
+                  color: Color(0xff0b5260),
                   fontWeight: FontWeight.bold,
                 ),
               ),

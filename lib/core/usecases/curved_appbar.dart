@@ -31,7 +31,9 @@ class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff6A11CB), Color(0xff2575FC)],
+          colors: [Color(0xff062d34), Color(0xff0b5260)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(30),
@@ -70,8 +72,8 @@ class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               PopupMenuButton<String>(
                 icon: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, color: Colors.blueAccent),
+                  backgroundColor: const Color(0xfff08024),
+                  child: const Icon(Icons.person, color: Colors.white),
                 ),
                 color: Colors.white,
                 onSelected: (value) async {

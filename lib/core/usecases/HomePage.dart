@@ -147,8 +147,8 @@ class _HomePageState extends State<HomePage> {
                   _buildSectionTitle("Actions rapides"),
                   const SizedBox(height: 12),
                   _buildQuickActions(),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle("Activité récente"),
+                  // const SizedBox(height: 20),
+                  // _buildSectionTitle("Activité récente"),
                   // const SizedBox(height: 12),
                   // _buildActivityList(),
                 ],
@@ -162,13 +162,13 @@ class _HomePageState extends State<HomePage> {
     return Row(
       children: [
         Expanded(
-          child: _statCard(
-              "Membres", totalMembers.toString(), Icons.people, Colors.blue),
+          child: _statCard("Membres", totalMembers.toString(), Icons.people,
+              const Color(0xff0b5260)),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _statCard("Solde", "${totalBalance.toStringAsFixed(0)} FCFA",
-              Icons.account_balance_wallet, Colors.green),
+              Icons.account_balance_wallet, const Color(0xfff08024)),
         ),
       ],
     );
@@ -326,9 +326,11 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(6),
                           gradient: const LinearGradient(
                             colors: [
-                              Color(0xff6A11CB),
-                              Color(0xff2575FC),
+                              Color(0xff0b5260),
+                              Color(0xfff08024),
                             ],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
                           ),
                         )
                       ],
@@ -358,14 +360,15 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _actionCard("Membres", Icons.people, Colors.blue),
-          _actionCard("Versements", Icons.payment, Colors.green),
-          _actionCard("Projets", Icons.work, Colors.orange),
-          _actionCard("Bureaux", Icons.account_balance, Colors.purple),
+          _actionCard("Membres", Icons.people, const Color(0xff0b5260)),
+          _actionCard("Versements", Icons.payment, const Color(0xfff08024)),
+          _actionCard("Projets", Icons.work, const Color(0xff0b5260)),
+          _actionCard(
+              "Bureaux", Icons.account_balance, const Color(0xfff08024)),
           _actionCard(
             "Baptêmes",
             Icons.church,
-            Colors.teal,
+            const Color(0xff0b5260),
             onTap: () {
               Navigator.push(
                 context,

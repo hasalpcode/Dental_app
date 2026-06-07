@@ -4,14 +4,14 @@ import 'package:dental_app/core/features/baptemes/domain/entity/bapteme_entity.d
 
 class BaptismTile extends StatelessWidget {
   final Baptism baptism;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const BaptismTile({
     super.key,
     required this.baptism,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -28,7 +28,7 @@ class BaptismTile extends StatelessWidget {
           vertical: 8,
         ),
         leading: const CircleAvatar(
-          backgroundColor: Colors.teal,
+          backgroundColor: Color(0xff0b5260),
           child: Icon(Icons.church, color: Colors.white),
         ),
         title: Text(
@@ -39,17 +39,22 @@ class BaptismTile extends StatelessWidget {
           "${baptism.lieu} • ${_formatDate(baptism.dateCreation)}",
         ),
 
-        // 🔥 menu actions
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') onEdit();
-            if (value == 'delete') onDelete();
-          },
-          itemBuilder: (context) => const [
-            PopupMenuItem(value: 'edit', child: Text('Modifier')),
-            PopupMenuItem(value: 'delete', child: Text('Supprimer')),
-          ],
-        ),
+        // 🔥 menu actions (masqué si non-admin)
+        trailing: (onEdit != null || onDelete != null)
+            ? PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') onEdit?.call();
+                  if (value == 'delete') onDelete?.call();
+                },
+                itemBuilder: (context) => [
+                  if (onEdit != null)
+                    const PopupMenuItem(value: 'edit', child: Text('Modifier')),
+                  if (onDelete != null)
+                    const PopupMenuItem(
+                        value: 'delete', child: Text('Supprimer')),
+                ],
+              )
+            : null,
 
         // 🔥 navigation détail
         onTap: () {

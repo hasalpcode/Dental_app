@@ -30,24 +30,24 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,
         onTap: (i) => setState(() => index = i),
-        selectedItemColor: Colors.deepPurple,
+        selectedItemColor: const Color(0xfff08024),
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded, color: Colors.black),
-              label: "Accueil"),
+              icon: Icon(Icons.home_rounded), label: "Accueil"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.people_alt, color: Colors.black),
-              label: "Membres"),
+              icon: Icon(Icons.people_alt), label: "Membres"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_rounded,
-                  color: Colors.black),
+              icon: Icon(Icons.account_balance_wallet_rounded),
               label: "Finance"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.corporate_fare, color: Colors.black),
-              label: "Bureaux"),
+              icon: Icon(Icons.corporate_fare), label: "Bureaux"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.folder_special_rounded, color: Colors.black),
-              label: "Projets"),
+              icon: Icon(Icons.folder_special_rounded), label: "Projets"),
         ],
       ),
     );

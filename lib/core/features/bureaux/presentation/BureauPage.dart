@@ -62,7 +62,8 @@ class _BureauPageState extends State<BureauPage> {
       floatingActionButton: canModify
           ? FloatingActionButton(
               onPressed: _openAddModal,
-              child: const Icon(Icons.add),
+              backgroundColor: const Color(0xfff08024),
+              child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
       body: Stack(

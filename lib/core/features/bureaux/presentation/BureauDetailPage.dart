@@ -152,12 +152,16 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
     final canModify = auth.canModify;
 
     return Scaffold(
-      appBar: const CurvedAppBar(title: "Détails Bureau"),
+      appBar: CurvedAppBar(
+        title: "Détails Bureau",
+        leading: BackButton(onPressed: () => Navigator.pop(context)),
+      ),
       floatingActionButton: canModify
           ? FloatingActionButton(
               onPressed: isLoading ? null : _openAddMemberModal,
-              backgroundColor: isLoading ? Colors.grey : Colors.green,
-              child: const Icon(Icons.add),
+              backgroundColor:
+                  isLoading ? Colors.grey : const Color(0xfff08024),
+              child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
       body: isLoading
@@ -187,13 +191,14 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
                           children: [
                             CircleAvatar(
                               radius: 30,
-                              backgroundColor: Colors.green.withOpacity(0.2),
+                              backgroundColor:
+                                  const Color(0xff0b5260).withOpacity(0.15),
                               child: Text(
                                 widget.bureau.name[0],
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green,
+                                  color: Color(0xff0b5260),
                                 ),
                               ),
                             ),
@@ -304,12 +309,12 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
                                   CircleAvatar(
                                     radius: 20,
                                     backgroundColor:
-                                        Colors.blue.withOpacity(0.2),
+                                        const Color(0xff0b5260).withOpacity(0.15),
                                     child: Text(
                                       member.username[0].toUpperCase(),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
+                                        color: Color(0xff0b5260),
                                       ),
                                     ),
                                   ),
@@ -337,40 +342,41 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
                                       ],
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.red),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Confirmer'),
-                                          content: const Text(
-                                            'Retirer ce membre du bureau?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
-                                              child: const Text('Annuler'),
+                                  if (canModify)
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          color: Colors.red),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('Confirmer'),
+                                            content: const Text(
+                                              'Retirer ce membre du bureau?',
                                             ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                _removeMemberFromBureau(member);
-                                              },
-                                              child: const Text(
-                                                'Retirer',
-                                                style: TextStyle(
-                                                  color: Colors.red,
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('Annuler'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  _removeMemberFromBureau(
+                                                      member);
+                                                },
+                                                child: const Text(
+                                                  'Retirer',
+                                                  style: TextStyle(
+                                                      color: Colors.red),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                 ],
                               ),
                             );
@@ -597,19 +603,20 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                     final member = _availableMembers[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Colors.green.withOpacity(0.2),
+                        backgroundColor:
+                            const Color(0xff0b5260).withOpacity(0.15),
                         child: Text(
                           member.username[0].toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                            color: Color(0xff0b5260),
                           ),
                         ),
                       ),
                       title: Text(member.displayName),
                       subtitle: Text(member.tel),
                       trailing: const Icon(Icons.add_circle_outline,
-                          color: Colors.green),
+                          color: Color(0xfff08024)),
                       onTap: () => _choosePostAndSubmit(member),
                     );
                   },

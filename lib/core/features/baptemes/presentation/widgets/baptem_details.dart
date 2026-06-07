@@ -51,7 +51,12 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Détails du baptême')),
+      appBar: AppBar(
+        title: const Text('Détails du baptême'),
+        backgroundColor: const Color(0xff0b5260),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: FutureBuilder<_BaptismDetailData>(
         future: detailFuture,
         builder: (context, snapshot) {
@@ -72,8 +77,50 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text("Lieu: ${baptism.lieu}"),
-              Text("Date de création: ${_formatDate(baptism.dateCreation)}"),
+              // Info card
+              Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const CircleAvatar(
+                            backgroundColor: Color(0xff0b5260),
+                            child: Icon(Icons.church, color: Colors.white),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              baptism.nomComplet,
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      Row(children: [
+                        const Icon(Icons.location_on,
+                            size: 16, color: Color(0xff0b5260)),
+                        const SizedBox(width: 8),
+                        Text("Lieu : ${baptism.lieu}"),
+                      ]),
+                      const SizedBox(height: 6),
+                      Row(children: [
+                        const Icon(Icons.calendar_today,
+                            size: 16, color: Color(0xff0b5260)),
+                        const SizedBox(width: 8),
+                        Text("Date : ${_formatDate(baptism.dateCreation)}"),
+                      ]),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
               const Text(
                 "Cotisations",
@@ -83,19 +130,54 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
               ...baptism.contributions.map((c) {
                 final memberName =
                     memberNames[c.membreId] ?? 'Membre #${c.membreId}';
-                return ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(memberName),
-                  subtitle: Text('ID: ${c.membreId}'),
-                  trailing: Text("${c.montant} €"),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black12, blurRadius: 6)
+                    ],
+                  ),
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xfff08024),
+                      child: Icon(Icons.person, color: Colors.white, size: 18),
+                    ),
+                    title: Text(memberName,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    trailing: Text(
+                      "${c.montant} Fcfa",
+                      style: const TextStyle(
+                          color: Color(0xff0b5260),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 );
               }),
-              const SizedBox(height: 20),
-              Text(
-                "Total: ${_total(baptism)} €",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xff0b5260), Color(0xff1a7a8a)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Total collecté",
+                        style: TextStyle(
+                            color: Colors.white70, fontWeight: FontWeight.w500)),
+                    Text(
+                      "${_total(baptism).toStringAsFixed(0)} Fcfa",
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
             ],

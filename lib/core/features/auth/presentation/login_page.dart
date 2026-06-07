@@ -46,9 +46,9 @@ class _LoginPageState extends State<LoginPage>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xff5f2c82), Color(0xff49a09d)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [Color(0xff062d34), Color(0xff0b5260), Color(0xff1a7a8a)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: FadeTransition(
@@ -61,16 +61,32 @@ class _LoginPageState extends State<LoginPage>
                 child: Column(
                   children: [
                     // 🔷 LOGO
-                    Image.asset(
-                      'assets/img/logo_dental.jpeg',
-                      height: 120,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/img/logo_dental.jpeg',
+                        height: 90,
+                        fit: BoxFit.contain,
+                      ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     const Text(
                       "Bienvenue 👋",
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                      style: TextStyle(color: Colors.white70, fontSize: 15),
                     ),
 
                     const SizedBox(height: 40),
@@ -189,15 +205,16 @@ class _LoginPageState extends State<LoginPage>
                                   borderRadius: BorderRadius.circular(14),
                                   gradient: const LinearGradient(
                                     colors: [
-                                      Color(0xff6A11CB),
-                                      Color(0xff2575FC)
+                                      Color(0xfff08024),
+                                      Color(0xffe06010),
                                     ],
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.deepPurple.withOpacity(0.4),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 5),
+                                      color: const Color(0xfff08024)
+                                          .withOpacity(0.45),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
                                     )
                                   ],
                                 ),

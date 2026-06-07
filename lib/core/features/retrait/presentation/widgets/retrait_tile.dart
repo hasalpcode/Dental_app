@@ -37,8 +37,12 @@ class RetraitTile extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.red.withOpacity(0.2),
-            child: Text(username.isNotEmpty ? username[0] : "?"),
+            backgroundColor: const Color(0xfff08024).withOpacity(0.15),
+            child: Text(
+              username.isNotEmpty ? username[0] : "?",
+              style: const TextStyle(
+                  color: Color(0xfff08024), fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
