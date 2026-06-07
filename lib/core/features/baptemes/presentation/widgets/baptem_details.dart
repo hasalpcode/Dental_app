@@ -53,7 +53,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détails du baptême'),
-        backgroundColor: const Color(0xff0b5260),
+        backgroundColor: const Color(0xfff08024),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -90,7 +90,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                       Row(
                         children: [
                           const CircleAvatar(
-                            backgroundColor: Color(0xff0b5260),
+                            backgroundColor: Color(0xfff08024),
                             child: Icon(Icons.church, color: Colors.white),
                           ),
                           const SizedBox(width: 12),
@@ -106,14 +106,14 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                       const Divider(height: 24),
                       Row(children: [
                         const Icon(Icons.location_on,
-                            size: 16, color: Color(0xff0b5260)),
+                            size: 16, color: Color(0xfff08024)),
                         const SizedBox(width: 8),
                         Text("Lieu : ${baptism.lieu}"),
                       ]),
                       const SizedBox(height: 6),
                       Row(children: [
                         const Icon(Icons.calendar_today,
-                            size: 16, color: Color(0xff0b5260)),
+                            size: 16, color: Color(0xfff08024)),
                         const SizedBox(width: 8),
                         Text("Date : ${_formatDate(baptism.dateCreation)}"),
                       ]),
@@ -141,7 +141,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                   ),
                   child: ListTile(
                     leading: const CircleAvatar(
-                      backgroundColor: Color(0xfff08024),
+                      backgroundColor: Color(0xff0b5260),
                       child: Icon(Icons.person, color: Colors.white, size: 18),
                     ),
                     title: Text(memberName,
@@ -149,7 +149,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                     trailing: Text(
                       "${c.montant} Fcfa",
                       style: const TextStyle(
-                          color: Color(0xff0b5260),
+                          color: Color(0xfff08024),
                           fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -160,7 +160,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xff0b5260), Color(0xff1a7a8a)],
+                    colors: [Color(0xfff08024), Color(0xfff5a050)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),

@@ -200,7 +200,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? const Color(0xff0b5260) : Colors.transparent,
+            color: active ? const Color(0xfff08024) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,
@@ -300,7 +300,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
                 onPressed: _showVersements
                     ? _openAddPaymentModal
                     : _openAddRetraitModal,
-                backgroundColor: const Color(0xfff08024),
+                backgroundColor: const Color(0xff0b5260),
                 child: const Icon(Icons.add, color: Colors.white),
               )
             : null,

@@ -97,7 +97,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: const Color(0xff0b5260)),
+          Icon(icon, size: 18, color: const Color(0xfff08024)),
           const SizedBox(width: 10),
           Text(
             '$label : ',
@@ -292,14 +292,14 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           widget.project.libelle,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xff0b5260),
+        backgroundColor: const Color(0xfff08024),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       floatingActionButton: canModify
           ? FloatingActionButton.extended(
               onPressed: _uploading ? null : _pickAndUpload,
-              backgroundColor: const Color(0xfff08024),
+              backgroundColor: const Color(0xff0b5260),
               icon: _uploading
                   ? const SizedBox(
                       width: 20,

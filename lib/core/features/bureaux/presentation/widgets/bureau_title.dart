@@ -36,12 +36,12 @@ class BureauTile extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: const Color(0xff0b5260).withOpacity(0.15),
+                    backgroundColor: const Color(0xfff08024).withOpacity(0.15),
                     child: Text(
                       project.name[0],
                       style: const TextStyle(
                           fontSize: 22,
-                          color: Color(0xff0b5260),
+                          color: Color(0xfff08024),
                           fontWeight: FontWeight.bold),
                     ),
                   ),

@@ -125,7 +125,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
             floatingActionButton: canModify
                 ? FloatingActionButton(
                     onPressed: _openAddModal,
-                    backgroundColor: const Color(0xfff08024),
+                    backgroundColor: const Color(0xff0b5260),
                     child: const Icon(Icons.add, color: Colors.white),
                   )
                 : null,

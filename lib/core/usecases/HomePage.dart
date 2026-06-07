@@ -163,12 +163,12 @@ class _HomePageState extends State<HomePage> {
       children: [
         Expanded(
           child: _statCard("Membres", totalMembers.toString(), Icons.people,
-              const Color(0xff0b5260)),
+              const Color(0xfff08024)),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _statCard("Solde", "${totalBalance.toStringAsFixed(0)} FCFA",
-              Icons.account_balance_wallet, const Color(0xfff08024)),
+              Icons.account_balance_wallet, const Color(0xff0b5260)),
         ),
       ],
     );
@@ -326,8 +326,8 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(6),
                           gradient: const LinearGradient(
                             colors: [
-                              Color(0xff0b5260),
                               Color(0xfff08024),
+                              Color(0xff0b5260),
                             ],
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
@@ -360,15 +360,15 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _actionCard("Membres", Icons.people, const Color(0xff0b5260)),
-          _actionCard("Versements", Icons.payment, const Color(0xfff08024)),
-          _actionCard("Projets", Icons.work, const Color(0xff0b5260)),
+          _actionCard("Membres", Icons.people, const Color(0xfff08024)),
+          _actionCard("Versements", Icons.payment, const Color(0xff0b5260)),
+          _actionCard("Projets", Icons.work, const Color(0xfff08024)),
           _actionCard(
-              "Bureaux", Icons.account_balance, const Color(0xfff08024)),
+              "Bureaux", Icons.account_balance, const Color(0xff0b5260)),
           _actionCard(
             "Baptêmes",
             Icons.church,
-            const Color(0xff0b5260),
+            const Color(0xfff08024),
             onTap: () {
               Navigator.push(
                 context,

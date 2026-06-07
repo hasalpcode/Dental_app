@@ -28,7 +28,7 @@ class BaptismTile extends StatelessWidget {
           vertical: 8,
         ),
         leading: const CircleAvatar(
-          backgroundColor: Color(0xff0b5260),
+          backgroundColor: Color(0xfff08024),
           child: Icon(Icons.church, color: Colors.white),
         ),
         title: Text(

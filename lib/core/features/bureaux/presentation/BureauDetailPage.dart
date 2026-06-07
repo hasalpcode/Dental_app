@@ -160,7 +160,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
           ? FloatingActionButton(
               onPressed: isLoading ? null : _openAddMemberModal,
               backgroundColor:
-                  isLoading ? Colors.grey : const Color(0xfff08024),
+                  isLoading ? Colors.grey : const Color(0xff0b5260),
               child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
@@ -192,13 +192,13 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
                             CircleAvatar(
                               radius: 30,
                               backgroundColor:
-                                  const Color(0xff0b5260).withOpacity(0.15),
+                                  const Color(0xfff08024).withOpacity(0.15),
                               child: Text(
                                 widget.bureau.name[0],
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xff0b5260),
+                                  color: Color(0xfff08024),
                                 ),
                               ),
                             ),
@@ -309,12 +309,12 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
                                   CircleAvatar(
                                     radius: 20,
                                     backgroundColor:
-                                        const Color(0xff0b5260).withOpacity(0.15),
+                                        const Color(0xfff08024).withOpacity(0.15),
                                     child: Text(
                                       member.username[0].toUpperCase(),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xff0b5260),
+                                        color: Color(0xfff08024),
                                       ),
                                     ),
                                   ),
@@ -604,19 +604,19 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundColor:
-                            const Color(0xff0b5260).withOpacity(0.15),
+                            const Color(0xfff08024).withOpacity(0.15),
                         child: Text(
                           member.username[0].toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xff0b5260),
+                            color: Color(0xfff08024),
                           ),
                         ),
                       ),
                       title: Text(member.displayName),
                       subtitle: Text(member.tel),
                       trailing: const Icon(Icons.add_circle_outline,
-                          color: Color(0xfff08024)),
+                          color: Color(0xff0b5260)),
                       onTap: () => _choosePostAndSubmit(member),
                     );
                   },
