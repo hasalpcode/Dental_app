@@ -90,9 +90,12 @@ class _AddBureauModalState extends State<AddBureauModal> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 30),
-                    Text(widget.bureau == null ? "Add Bureau" : "Edit Bureau",
+                    Text(
+                        widget.bureau == null ? "Ajouter Bureau" : "Modifier Bureau",
                         style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xfff08024))),
                     const SizedBox(height: 20),
 
                     // Bureau dropdown
@@ -121,6 +124,8 @@ class _AddBureauModalState extends State<AddBureauModal> {
                         onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 15),
+                            backgroundColor: const Color(0xff0b5260),
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15))),
                         child: _isSaving

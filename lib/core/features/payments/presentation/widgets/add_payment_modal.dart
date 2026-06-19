@@ -103,6 +103,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xfff08024),
                       ),
                     ),
 
@@ -169,6 +170,13 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                               setState(() => selectedDate = picked);
                             }
                           },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xfff08024),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: const Text("Choisir la date"),
                         )
                       ],
@@ -183,6 +191,8 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                         onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: const Color(0xff0b5260),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

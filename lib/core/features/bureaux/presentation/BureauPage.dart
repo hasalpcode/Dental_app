@@ -1,5 +1,5 @@
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
-import 'package:dental_app/core/features/bureaux/data/bureau_local_data_source.dart';
+import 'package:dental_app/core/features/bureaux/data/bureau_remote_data_source.dart';
 import 'package:dental_app/core/features/bureaux/data/bureau_repository_impl.dart';
 import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart';
 import 'package:dental_app/core/features/bureaux/domain/usecases/add_bureau.dart';
@@ -11,6 +11,7 @@ import 'package:dental_app/core/features/bureaux/presentation/widgets/add_bureau
 import 'package:dental_app/core/features/bureaux/presentation/widgets/bureaux_list.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class BureauPage extends StatefulWidget {
@@ -27,35 +28,41 @@ class _BureauPageState extends State<BureauPage> {
   late final UpdateBureau updateBureau;
   late final DeleteBureau deleteBureau;
 
-  late List<BureauEntity> bureaux;
+  List<BureauEntity> bureaux = [];
+  bool isLoading = false;
   bool isDeleting = false;
-
-  List<BureauEntity> get filteredBureaux {
-    return bureaux;
-  }
+  String? error;
 
   @override
   void initState() {
     super.initState();
-    final dataSource = BureauLocalDataSource();
-    repository = BureauRepositoryImpl(dataSource);
-
+    repository = BureauRepositoryImpl(BureauRemoteDataSource(http.Client()));
     getBureaux = GetBureaux(repository);
     addBureau = AddBureau(repository);
     updateBureau = UpdateBureau(repository);
     deleteBureau = DeleteBureau(repository);
-
-    bureaux = getBureaux();
+    _loadBureaux();
   }
 
-  void _refresh() {
-    setState(() => bureaux = getBureaux());
+  Future<void> _loadBureaux() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+    try {
+      final data = await getBureaux();
+      if (mounted) setState(() => bureaux = data);
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final canModify = auth.canModify;
+    final canModify =
+        Provider.of<AuthProvider>(context, listen: false).canModify;
 
     return Scaffold(
       appBar: const CurvedAppBar(title: "Bureaux"),
@@ -68,112 +75,115 @@ class _BureauPageState extends State<BureauPage> {
           : null,
       body: Stack(
         children: [
-          Column(
-            children: [
-              // 🔹 Filtre mois / année
-
-              // 🔹 Liste filtrée
-              Expanded(
-                child: BureauxList(
-                  bureaux: filteredBureaux,
-                  onDetails: (bureau) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BureauDetailPage(bureau: bureau),
-                      ),
-                    );
-                  },
-                  onEdit: canModify ? _openEditModal : null,
-                  onDelete: canModify
-                      ? (id) async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Confirmer la suppression'),
-                              content: const Text(
-                                  'Êtes-vous sûr de vouloir supprimer ce bureau?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Annuler'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Supprimer'),
-                                ),
-                              ],
+          RefreshIndicator(
+            onRefresh: _loadBureaux,
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(error!,
+                                style: const TextStyle(color: Colors.red)),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _loadBureaux,
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xff0b5260),
+                                  foregroundColor: Colors.white),
+                              child: const Text('Réessayer'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : BureauxList(
+                        bureaux: bureaux,
+                        onDetails: (bureau) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BureauDetailPage(bureau: bureau),
                             ),
                           );
-
-                          if (confirmed ?? false) {
-                            setState(() => isDeleting = true);
-                            try {
-                              deleteBureau(id);
-                              _refresh();
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Erreur: $e')),
+                        },
+                        onEdit: canModify ? _openEditModal : null,
+                        onDelete: canModify
+                            ? (id) async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Confirmer la suppression'),
+                                    content: const Text(
+                                        'Êtes-vous sûr de vouloir supprimer ce bureau?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Annuler'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Supprimer'),
+                                      ),
+                                    ],
+                                  ),
                                 );
+
+                                if (confirmed ?? false) {
+                                  setState(() => isDeleting = true);
+                                  try {
+                                    await deleteBureau(id);
+                                    await _loadBureaux();
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content: Text('Erreur: $e')));
+                                    }
+                                  } finally {
+                                    if (mounted)
+                                      setState(() => isDeleting = false);
+                                  }
+                                }
                               }
-                            } finally {
-                              if (mounted) {
-                                setState(() => isDeleting = false);
-                              }
-                            }
-                          }
-                        }
-                      : null,
-                ),
-              ),
-            ],
+                            : null,
+                      ),
           ),
           if (isDeleting)
             Container(
               color: Colors.black26,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
     );
   }
 
-  // 🔹 Modal ajout
   void _openAddModal() {
+    final bureauIds = bureaux.map((b) => b.bureauId).toList();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddBureauModal(
         bureau: null,
-        bureaus: [1, 2, 3],
-        onSubmit: (p) {
-          addBureau(p);
-          _refresh();
+        bureaus: bureauIds.isEmpty ? [1, 2, 3] : bureauIds,
+        onSubmit: (b) async {
+          await addBureau(b);
+          await _loadBureaux();
         },
       ),
     );
   }
 
-  // 🔹 Modal édition
   void _openEditModal(BureauEntity bureau) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BureauDetailPage(bureau: bureau),
-      // AddBureauModal(
-      //   bureau: bureau,
-      //   bureaus: ["Bureau A", "Bureau B", "Bureau C"],
-      //   onSubmit: (p) {
-      //     updateBureau(p);
-      //     _refresh();
-      //   },
-      // ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BureauDetailPage(bureau: bureau),
+      ),
     );
   }
 }

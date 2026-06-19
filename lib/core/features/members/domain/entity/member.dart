@@ -8,6 +8,8 @@ class Member {
   final String? posteId;
   final DateTime? dateAdhesion;
   final String? carteMembre;
+  final int? roleId;
+  final String? role;
 
   Member({
     this.membreId,
@@ -19,6 +21,8 @@ class Member {
     this.posteId,
     this.dateAdhesion,
     this.carteMembre,
+    this.roleId,
+    this.role,
   });
 
   String get displayName {

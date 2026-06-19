@@ -86,6 +86,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xfff08024),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -179,6 +180,8 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                               style: ElevatedButton.styleFrom(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
+                                backgroundColor: const Color(0xfff08024),
+                                foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(15),
                                 ),
@@ -223,6 +226,8 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                         onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: const Color(0xff0b5260),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -234,7 +239,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Text("Save"),
+                            : const Text("Enregistrer"),
                       ),
                     ),
                   ],

@@ -5,5 +5,5 @@ class UpdateBureau {
   final BureauRepository repository;
   UpdateBureau(this.repository);
 
-  void call(BureauEntity bureau) => repository.updateBureau(bureau);
+  Future<void> call(BureauEntity bureau) => repository.updateBureau(bureau);
 }

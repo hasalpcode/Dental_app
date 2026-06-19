@@ -11,6 +11,8 @@ class MemberModel extends Member {
     String? posteId,
     DateTime? dateAdhesion,
     String? carteMembre,
+    int? roleId,
+    String? role,
   }) : super(
           membreId: membreId,
           userId: userId,
@@ -21,6 +23,8 @@ class MemberModel extends Member {
           posteId: posteId,
           dateAdhesion: dateAdhesion,
           carteMembre: carteMembre,
+          roleId: roleId,
+          role: role,
         );
 
   factory MemberModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +40,8 @@ class MemberModel extends Member {
           ? DateTime.tryParse(json['dateAdhesion'])
           : null,
       carteMembre: json['carteMembre']?.toString(),
+      roleId: json['roleId']?.toInt() ?? null,
+      role: json['role']?.toString() ?? json['roleName']?.toString(),
     );
   }
 
@@ -68,6 +74,8 @@ class MemberModel extends Member {
       posteId: member.posteId,
       dateAdhesion: member.dateAdhesion,
       carteMembre: member.carteMembre,
+      roleId: member.roleId,
+      role: member.role,
     );
   }
 }

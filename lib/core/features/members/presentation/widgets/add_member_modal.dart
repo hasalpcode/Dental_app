@@ -103,10 +103,11 @@ class _AddMemberModalState extends State<AddMemberModal> {
                     const SizedBox(height: 30),
 
                     Text(
-                      widget.member == null ? "Add Member" : "Edit Member",
+                      widget.member == null ? "Ajouter Membre" : "Modifier Membre",
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xfff08024),
                       ),
                     ),
 
@@ -168,7 +169,8 @@ class _AddMemberModalState extends State<AddMemberModal> {
                         onPressed: isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
-                          backgroundColor: Colors.green,
+                          backgroundColor: const Color(0xff0b5260),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

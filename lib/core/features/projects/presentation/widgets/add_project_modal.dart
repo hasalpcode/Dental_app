@@ -99,9 +99,11 @@ class _AddProjectModalState extends State<AddProjectModal> {
                     const SizedBox(height: 30),
 
                     Text(
-                      widget.project == null ? "Add Project" : "Edit Project",
+                      widget.project == null ? "Ajouter Projet" : "Modifier Projet",
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xfff08024)),
                     ),
 
                     const SizedBox(height: 20),
@@ -186,6 +188,8 @@ class _AddProjectModalState extends State<AddProjectModal> {
                         onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: const Color(0xff0b5260),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

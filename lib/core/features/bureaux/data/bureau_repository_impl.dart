@@ -1,21 +1,24 @@
-import 'package:dental_app/core/features/bureaux/data/bureau_local_data_source.dart';
+import 'package:dental_app/core/features/bureaux/data/bureau_model.dart';
+import 'package:dental_app/core/features/bureaux/data/bureau_remote_data_source.dart';
 import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart';
 import 'package:dental_app/core/features/bureaux/domain/repositories/bureau_repository.dart';
 
 class BureauRepositoryImpl implements BureauRepository {
-  final BureauLocalDataSource dataSource;
+  final BureauRemoteDataSource dataSource;
 
   BureauRepositoryImpl(this.dataSource);
 
   @override
-  List<BureauEntity> getBureaus() => dataSource.getBureaus();
+  Future<List<BureauEntity>> getBureaus() => dataSource.getBureaux();
 
   @override
-  void addBureau(BureauEntity bureau) => dataSource.addBureau(bureau);
+  Future<void> addBureau(BureauEntity bureau) =>
+      dataSource.addBureau(BureauModel.fromEntity(bureau));
 
   @override
-  void updateBureau(BureauEntity bureau) => dataSource.updateBureau(bureau);
+  Future<void> updateBureau(BureauEntity bureau) =>
+      dataSource.updateBureau(BureauModel.fromEntity(bureau));
 
   @override
-  void deleteBureau(int bureauId) => dataSource.deleteBureau(bureauId);
+  Future<void> deleteBureau(int bureauId) => dataSource.deleteBureau(bureauId);
 }

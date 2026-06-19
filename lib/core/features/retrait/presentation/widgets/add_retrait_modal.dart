@@ -106,6 +106,7 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xfff08024),
                       ),
                     ),
 
@@ -189,6 +190,13 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
                               setState(() => selectedDate = picked);
                             }
                           },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xfff08024),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: const Text("Date"),
                         )
                       ],
@@ -203,6 +211,8 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
                         onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
+                          backgroundColor: const Color(0xff0b5260),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

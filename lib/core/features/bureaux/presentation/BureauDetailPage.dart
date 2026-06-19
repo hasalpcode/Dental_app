@@ -43,11 +43,14 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
   Future<void> _loadMembers() async {
     try {
       final members = await getMembers();
+      final comptables =
+          members.where((m) => m.role == 'COMPTABLE').toList();
 
       setState(() {
-        allMembers = members;
-        bureauMembers =
-            members.where((m) => m.bureauId == widget.bureau.bureauId).toList();
+        allMembers = comptables;
+        bureauMembers = comptables
+            .where((m) => m.bureauId == widget.bureau.bureauId)
+            .toList();
         isLoading = false;
       });
     } catch (e) {
@@ -308,8 +311,8 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
                                 children: [
                                   CircleAvatar(
                                     radius: 20,
-                                    backgroundColor:
-                                        const Color(0xfff08024).withOpacity(0.15),
+                                    backgroundColor: const Color(0xfff08024)
+                                        .withOpacity(0.15),
                                     child: Text(
                                       member.username[0].toUpperCase(),
                                       style: const TextStyle(

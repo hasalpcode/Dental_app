@@ -5,5 +5,5 @@ class GetBureaux {
   final BureauRepository repository;
   GetBureaux(this.repository);
 
-  List<BureauEntity> call() => repository.getBureaus();
+  Future<List<BureauEntity>> call() => repository.getBureaus();
 }
