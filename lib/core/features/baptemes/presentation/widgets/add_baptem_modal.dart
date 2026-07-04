@@ -7,6 +7,7 @@ import 'package:dental_app/core/features/members/data/member_model.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 
 class AddBaptismModal extends StatefulWidget {
   final Function(Baptism) onSubmit;
@@ -61,9 +62,11 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: MediaQuery.of(context).viewInsets.bottom + 20,
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         ),
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -368,7 +371,5 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
     );
   }
 
-  String _formatDate(DateTime d) {
-    return "${d.day}/${d.month}/${d.year}";
-  }
+  String _formatDate(DateTime d) => formatDateFr(d);
 }

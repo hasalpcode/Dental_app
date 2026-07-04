@@ -1,5 +1,6 @@
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 
 class AddRetraitModal extends StatefulWidget {
@@ -78,9 +79,11 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: MediaQuery.of(context).viewInsets.bottom + 20,
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         ),
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -174,7 +177,7 @@ class _AddRetraitModalState extends State<AddRetraitModal> {
                     Row(
                       children: [
                         Text(
-                          "Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                          "Date: ${formatDateFr(selectedDate)}",
                         ),
                         const SizedBox(width: 10),
                         ElevatedButton(

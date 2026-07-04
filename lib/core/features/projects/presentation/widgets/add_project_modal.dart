@@ -19,6 +19,7 @@ class AddProjectModal extends StatefulWidget {
 
 class _AddProjectModalState extends State<AddProjectModal> {
   int? selectedBureau;
+  late List<int> availableBureaus;
 
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -29,8 +30,14 @@ class _AddProjectModalState extends State<AddProjectModal> {
   void initState() {
     super.initState();
 
+    availableBureaus = List.from(widget.bureaus);
+
     if (widget.project != null) {
       selectedBureau = widget.project!.bureauId;
+      if (selectedBureau != null &&
+          !availableBureaus.contains(selectedBureau)) {
+        availableBureaus.add(selectedBureau!);
+      }
 
       nameController.text = widget.project!.libelle;
       descriptionController.text = widget.project!.description ?? '';
@@ -57,7 +64,7 @@ class _AddProjectModalState extends State<AddProjectModal> {
         libelle: nameController.text,
         description: descriptionController.text,
         budget: double.tryParse(budgetController.text),
-        bureauId: selectedBureau ?? null,
+        bureauId: selectedBureau,
         status: widget.project?.status,
         dateCreation: widget.project?.dateCreation,
       );
@@ -79,9 +86,11 @@ class _AddProjectModalState extends State<AddProjectModal> {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: MediaQuery.of(context).viewInsets.bottom + 20,
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         ),
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -161,7 +170,7 @@ class _AddProjectModalState extends State<AddProjectModal> {
                     // 🔹 BUREAU
                     DropdownButtonFormField<int>(
                       value: selectedBureau,
-                      items: widget.bureaus
+                      items: availableBureaus
                           .map((b) => DropdownMenuItem(
                                 value: b,
                                 child: Text("Bureau $b"),

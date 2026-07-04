@@ -1,6 +1,7 @@
 import 'package:dental_app/core/features/baptemes/presentation/widgets/baptem_details.dart';
 import 'package:flutter/material.dart';
 import 'package:dental_app/core/features/baptemes/domain/entity/bapteme_entity.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 
 class BaptismTile extends StatelessWidget {
   final Baptism baptism;
@@ -69,7 +70,5 @@ class BaptismTile extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
-  }
+  String _formatDate(DateTime date) => formatDateFr(date);
 }

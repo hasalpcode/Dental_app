@@ -4,8 +4,15 @@ import 'package:dental_app/core/features/projects/data/project_model.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:http/http.dart' as http;
 
+class ProjectImage {
+  final String id;
+  final String url;
+
+  ProjectImage({required this.id, required this.url});
+}
+
 class ProjectRemoteDataSource {
-  final String baseUrl = 'https://c84b-46-193-66-177.ngrok-free.app';
+  final String baseUrl = 'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -75,7 +82,7 @@ class ProjectRemoteDataSource {
     }
   }
 
-  Future<List<String>> getProjectImages(int projectId) async {
+  Future<List<ProjectImage>> getProjectImages(int projectId) async {
     final headers = await _getHeaders();
     final response = await http.get(
       Uri.parse('$baseUrl/member-service/api/imgprojects/$projectId/images'),
@@ -85,15 +92,18 @@ class ProjectRemoteDataSource {
       final data = json.decode(response.body);
       if (data is List) {
         return data
-            .map<String>((e) {
-              if (e is String) return e;
+            .map<ProjectImage?>((e) {
+              if (e is String) return ProjectImage(id: e, url: e);
               if (e is Map) {
-                return (e['url'] ?? e['imageUrl'] ?? e['path'] ?? '')
-                    .toString();
+                final url =
+                    (e['url'] ?? e['imageUrl'] ?? e['path'] ?? '').toString();
+                if (url.isEmpty) return null;
+                final id = (e['id'] ?? e['imageId'] ?? url).toString();
+                return ProjectImage(id: id, url: url);
               }
-              return '';
+              return null;
             })
-            .where((url) => url.isNotEmpty)
+            .whereType<ProjectImage>()
             .toList();
       }
       return [];
@@ -120,6 +130,20 @@ class ProjectRemoteDataSource {
     if (streamed.statusCode != 200 && streamed.statusCode != 201) {
       final body = await streamed.stream.bytesToString();
       throw Exception('Erreur upload image: ${streamed.statusCode} - $body');
+    }
+  }
+
+  Future<void> deleteProjectImage(int projectId, String imageId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse(
+          '$baseUrl/member-service/api/imgprojects/$projectId/images/$imageId'),
+      headers: headers,
+    );
+    if (response.statusCode != 200 &&
+        response.statusCode != 204) {
+      throw Exception(
+          'Erreur suppression image: ${response.statusCode} - ${response.body}');
     }
   }
 }

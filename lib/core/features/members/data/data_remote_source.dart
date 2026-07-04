@@ -9,7 +9,7 @@ class MemberRemoteDataSource {
 
   MemberRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://c84b-46-193-66-177.ngrok-free.app';
+  final String baseUrl = 'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();

@@ -73,9 +73,11 @@ class _AddBureauModalState extends State<AddBureauModal> {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: MediaQuery.of(context).viewInsets.bottom + 20),
+        padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(

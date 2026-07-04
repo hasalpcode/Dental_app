@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class BaptismRemoteDataSource {
   final http.Client client;
   final String baseUrl =
-      'https://c84b-46-193-66-177.ngrok-free.app/finance-service';
+      'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app/finance-service';
 
   BaptismRemoteDataSource(this.client);
 

@@ -10,6 +10,7 @@ import 'package:dental_app/core/features/members/data/member_repository_impl.dar
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
@@ -289,21 +290,10 @@ class _HomePageState extends State<HomePage> {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const months = [
-                            "J",
-                            "F",
-                            "M",
-                            "A",
-                            "M",
-                            "J",
-                            "J",
-                            "A",
-                            "S",
-                            "O",
-                            "N",
-                            "D"
-                          ];
-                          return Text(months[value.toInt()]);
+                          return Text(
+                            frenchMonthAbbreviations[value.toInt()],
+                            style: const TextStyle(fontSize: 10),
+                          );
                         },
                       ),
                     ),

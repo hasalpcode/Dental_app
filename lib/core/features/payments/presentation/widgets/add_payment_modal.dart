@@ -1,5 +1,6 @@
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 
 class AddPaymentModal extends StatefulWidget {
@@ -21,6 +22,8 @@ class AddPaymentModal extends StatefulWidget {
 class _AddPaymentModalState extends State<AddPaymentModal> {
   int? selectedMemberId;
   final amountController = TextEditingController();
+  final memberSearchController = TextEditingController();
+  TextEditingController? _autocompleteController;
   DateTime selectedDate = DateTime.now();
   bool _isSaving = false;
 
@@ -40,11 +43,33 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
   @override
   void dispose() {
     amountController.dispose();
+    memberSearchController.dispose();
     super.dispose();
   }
 
+  Member? get _selectedMember {
+    for (final m in widget.members) {
+      if (m.membreId == selectedMemberId) return m;
+    }
+    return null;
+  }
+
+  Member? _findMemberByDisplayName(String text) {
+    for (final m in widget.members) {
+      if (m.displayName == text) return m;
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
-    if (selectedMemberId == null || amountController.text.isEmpty) return;
+    if (selectedMemberId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Recherchez et sélectionnez un membre')),
+      );
+      return;
+    }
+    if (amountController.text.isEmpty) return;
 
     setState(() => _isSaving = true);
 
@@ -75,9 +100,11 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: MediaQuery.of(context).viewInsets.bottom + 20,
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         ),
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -109,26 +136,83 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
 
                     const SizedBox(height: 20),
 
-                    // MEMBER
-                    DropdownButtonFormField<int>(
-                      value: selectedMemberId,
-                      items: widget.members
-                          .where((m) => m.membreId != null)
-                          .map((m) => DropdownMenuItem(
-                                value: m.membreId,
-                                child: Text(m.displayName),
-                              ))
-                          .toList(),
-                      onChanged: (v) => setState(() => selectedMemberId = v),
-                      decoration: InputDecoration(
-                        labelText: "Membre",
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
+                    // MEMBER (recherche par numéro de carte ou nom)
+                    Autocomplete<Member>(
+                      initialValue: TextEditingValue(
+                        text: _selectedMember?.displayName ?? '',
                       ),
+                      displayStringForOption: (m) => m.displayName,
+                      optionsBuilder: (TextEditingValue value) {
+                        final query = value.text.trim().toLowerCase();
+                        if (query.isEmpty) return const Iterable<Member>.empty();
+                        return widget.members.where((m) =>
+                            (m.carteMembre?.toLowerCase().contains(query) ??
+                                false) ||
+                            m.username.toLowerCase().contains(query));
+                      },
+                      onSelected: (Member selection) {
+                        setState(() => selectedMemberId = selection.membreId);
+                      },
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onFieldSubmitted) {
+                        if (_autocompleteController != controller) {
+                          _autocompleteController = controller;
+                          controller.addListener(() {
+                            final match =
+                                _findMemberByDisplayName(controller.text.trim());
+                            if (match?.membreId != selectedMemberId) {
+                              setState(() => selectedMemberId = match?.membreId);
+                            }
+                          });
+                        }
+                        return TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: "Numéro de carte ou nom du membre",
+                            hintText: "Tapez le numéro de carte...",
+                            prefixIcon: const Icon(Icons.badge_outlined),
+                            suffixIcon: selectedMemberId != null
+                                ? const Icon(Icons.check_circle,
+                                    color: Colors.green)
+                                : null,
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(15),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                  maxHeight: 220, maxWidth: 320),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final option = options.elementAt(index);
+                                  return ListTile(
+                                    dense: true,
+                                    leading: const Icon(Icons.person_outline,
+                                        color: Color(0xfff08024)),
+                                    title: Text(option.displayName),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 15),
@@ -154,7 +238,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                     Row(
                       children: [
                         Text(
-                          "Date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                          "Date: ${formatDateFr(selectedDate)}",
                         ),
                         const SizedBox(width: 10),
                         ElevatedButton(

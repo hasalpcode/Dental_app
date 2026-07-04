@@ -1,3 +1,6 @@
+import 'package:dental_app/core/features/bureaux/data/bureau_remote_data_source.dart';
+import 'package:dental_app/core/features/bureaux/data/bureau_repository_impl.dart';
+import 'package:dental_app/core/features/bureaux/domain/usecases/get_bureaux.dart';
 import 'package:dental_app/core/features/projects/data/project_remote_data_source.dart';
 import 'package:dental_app/core/features/projects/data/project_repository_impl.dart';
 import 'package:dental_app/core/features/projects/domain/entity/project_entity.dart';
@@ -14,6 +17,7 @@ import 'package:dental_app/core/features/projects/presentation/ProjectDetailPage
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class ProjectsPage extends StatefulWidget {
@@ -30,6 +34,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
   late final UpdateProject updateProjectUseCase;
   late final DeleteProject deleteProjectUseCase;
   late final ProjectsCubit projectsCubit;
+  late final GetBureaux getBureauxUseCase;
+
+  List<int> _bureauIds = [];
 
   @override
   void initState() {
@@ -43,6 +50,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
     updateProjectUseCase = UpdateProject(repository);
     deleteProjectUseCase = DeleteProject(repository);
 
+    getBureauxUseCase =
+        GetBureaux(BureauRepositoryImpl(BureauRemoteDataSource(http.Client())));
+
     projectsCubit = ProjectsCubit(
       getProjectsUseCase,
       addProjectUseCase,
@@ -51,6 +61,19 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
 
     projectsCubit.loadProjects();
+    _loadBureaux();
+  }
+
+  Future<void> _loadBureaux() async {
+    try {
+      final bureaux = await getBureauxUseCase();
+      if (mounted) {
+        setState(
+            () => _bureauIds = bureaux.map((b) => b.bureauId).toList());
+      }
+    } catch (_) {
+      // Le formulaire fonctionne toujours sans bureau pré-rempli
+    }
   }
 
   @override
@@ -69,7 +92,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
-        bureaus: [],
+        bureaus: _bureauIds,
         onSubmit: (p) async {
           try {
             await projectsCubit.addProject(p);
@@ -92,7 +115,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
         project: project,
-        bureaus: [],
+        bureaus: _bureauIds,
         onSubmit: (p) async {
           try {
             await projectsCubit.updateProject(p);

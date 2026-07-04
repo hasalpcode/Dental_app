@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 
 class PaymentTile extends StatelessWidget {
   final PaymentEntity payment;
@@ -60,7 +61,7 @@ class PaymentTile extends StatelessWidget {
                   style: const TextStyle(color: Colors.grey),
                 ),
                 Text(
-                  date != null ? "${date.day}/${date.month}/${date.year}" : "",
+                  date != null ? formatDateFr(date) : "",
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],

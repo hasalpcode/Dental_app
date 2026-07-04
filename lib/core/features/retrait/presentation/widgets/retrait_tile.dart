@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 
 class RetraitTile extends StatelessWidget {
   final RetraitEntity retrait;
@@ -61,7 +62,7 @@ class RetraitTile extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 Text(
-                  date != null ? "${date.day}/${date.month}/${date.year}" : "",
+                  date != null ? formatDateFr(date) : "",
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],

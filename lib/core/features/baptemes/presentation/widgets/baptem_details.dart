@@ -5,6 +5,7 @@ import 'package:dental_app/core/features/baptemes/domain/usecases/get_onebaptem.
 import 'package:dental_app/core/features/members/data/data_remote_source.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -187,9 +188,7 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
     );
   }
 
-  String _formatDate(DateTime d) {
-    return "${d.day}/${d.month}/${d.year}";
-  }
+  String _formatDate(DateTime d) => formatDateFr(d);
 
   double _total(Baptism baptism) {
     return baptism.contributions.fold(0, (sum, c) => sum + c.montant);

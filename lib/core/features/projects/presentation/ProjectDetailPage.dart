@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/projects/data/project_remote_data_source.dart';
 import 'package:dental_app/core/features/projects/domain/entity/project_entity.dart';
+import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -20,9 +21,10 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   final _dataSource = ProjectRemoteDataSource();
   final _picker = ImagePicker();
 
-  List<String> _imageUrls = [];
+  List<ProjectImage> _images = [];
   bool _loadingImages = false;
   bool _uploading = false;
+  String? _deletingImageId;
 
   @override
   void initState() {
@@ -35,12 +37,52 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     if (id == null) return;
     setState(() => _loadingImages = true);
     try {
-      final urls = await _dataSource.getProjectImages(id);
-      if (mounted) setState(() => _imageUrls = urls);
+      final images = await _dataSource.getProjectImages(id);
+      if (mounted) setState(() => _images = images);
     } catch (_) {
       // endpoint images pas encore implémenté côté serveur
     } finally {
       if (mounted) setState(() => _loadingImages = false);
+    }
+  }
+
+  Future<void> _confirmAndDeleteImage(ProjectImage image) async {
+    final projectId = widget.project.projectId;
+    if (projectId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer la photo'),
+        content: const Text('Voulez-vous vraiment supprimer cette photo ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _deletingImageId = image.id);
+    try {
+      await _dataSource.deleteProjectImage(projectId, image.id);
+      if (mounted) {
+        setState(() => _images.removeWhere((i) => i.id == image.id));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur suppression : $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _deletingImageId = null);
     }
   }
 
@@ -115,9 +157,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   Widget _buildInfoCard() {
     final p = widget.project;
     final date = p.dateCreation;
-    final dateStr = date != null
-        ? '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}'
-        : 'N/A';
+    final dateStr = date != null ? formatDateFr(date) : 'N/A';
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -172,7 +212,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     );
   }
 
-  Widget _buildImagesSection() {
+  Widget _buildImagesSection(bool canModify) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       child: Column(
@@ -186,7 +226,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                '${_imageUrls.length} photo${_imageUrls.length != 1 ? 's' : ''}',
+                '${_images.length} photo${_images.length != 1 ? 's' : ''}',
                 style: const TextStyle(color: Colors.grey, fontSize: 13),
               ),
             ],
@@ -198,7 +238,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
               padding: EdgeInsets.all(32),
               child: CircularProgressIndicator(),
             ))
-          else if (_imageUrls.isEmpty)
+          else if (_images.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(32),
@@ -229,28 +269,65 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
               ),
-              itemCount: _imageUrls.length,
+              itemCount: _images.length,
               itemBuilder: (_, i) {
+                final image = _images[i];
+                final isDeleting = _deletingImageId == image.id;
                 return GestureDetector(
-                  onTap: () => _showImageFullscreen(_imageUrls[i]),
+                  onTap: () => _showImageFullscreen(image.url),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      _imageUrls[i],
-                      fit: BoxFit.cover,
-                      loadingBuilder: (_, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2)),
-                        );
-                      },
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.broken_image,
-                            color: Colors.grey),
-                      ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          image.url,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (_, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2)),
+                            );
+                          },
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image,
+                                color: Colors.grey),
+                          ),
+                        ),
+                        if (isDeleting)
+                          Container(
+                            color: Colors.black45,
+                            child: const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              ),
+                            ),
+                          )
+                        else if (canModify)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => _confirmAndDeleteImage(image),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close,
+                                    size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -320,7 +397,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildInfoCard(),
-              _buildImagesSection(),
+              _buildImagesSection(canModify),
             ],
           ),
         ),
