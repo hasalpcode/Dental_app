@@ -6,8 +6,8 @@ import 'package:dental_app/core/features/members/data/member_repository_impl.dar
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
 import 'package:dental_app/core/features/members/domain/usecases/update_member.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class BureauDetailPage extends StatefulWidget {
@@ -33,7 +33,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
   @override
   void initState() {
     super.initState();
-    final dataSource = MemberRemoteDataSource(http.Client());
+    final dataSource = MemberRemoteDataSource(ApiClient.instance);
     repository = MemberRepositoryImpl(dataSource);
     getMembers = GetMembers(repository);
     updateMember = UpdateMember(repository);
@@ -43,12 +43,10 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
   Future<void> _loadMembers() async {
     try {
       final members = await getMembers();
-      final comptables =
-          members.where((m) => m.role == 'COMPTABLE').toList();
 
       setState(() {
-        allMembers = comptables;
-        bureauMembers = comptables
+        allMembers = members;
+        bureauMembers = members
             .where((m) => m.bureauId == widget.bureau.bureauId)
             .toList();
         isLoading = false;
@@ -83,7 +81,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddMemberToBureauModal(
-        bureauId: widget.bureau.bureauId,
+        bureauId: widget.bureau.bureauId!,
         allMembers: allMembers,
         bureauMembers: bureauMembers,
         onMemberSelected: (member) async {
@@ -93,7 +91,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
               userId: member.userId,
               username: member.username,
               tel: member.tel,
-              address: member.address,
+              addresse: member.addresse,
               bureauId: widget.bureau.bureauId,
               posteId: null,
               dateAdhesion: member.dateAdhesion,
@@ -126,7 +124,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
         userId: member.userId,
         username: member.username,
         tel: member.tel,
-        address: member.address,
+        addresse: member.addresse,
         bureauId: null,
         posteId: null,
         dateAdhesion: member.dateAdhesion,
@@ -492,7 +490,7 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                             userId: member.userId,
                             username: member.username,
                             tel: member.tel,
-                            address: member.address,
+                            addresse: member.addresse,
                             bureauId: widget.bureauId,
                             posteId: selectedPoste,
                             dateAdhesion: member.dateAdhesion,

@@ -1,3 +1,5 @@
+import 'package:dental_app/core/helpers/date_helpers.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/features/members/data/data_remote_source.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
@@ -27,7 +29,6 @@ import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class PaymentsPage extends StatefulWidget {
@@ -59,7 +60,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
     searchController = TextEditingController()
       ..addListener(() => setState(() => searchQuery = searchController.text));
 
-    final client = http.Client();
+    final client = ApiClient.instance;
     final memberRepo = MemberRepositoryImpl(MemberRemoteDataSource(client));
     final getMembers = GetMembers(memberRepo);
 
@@ -70,7 +71,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
       AddPayment(paymentRepo),
       UpdatePayment(paymentRepo),
       DeletePayment(paymentRepo),
-    )..loadData();
+    );
 
     final retraitRepo = RetraitRepositoryImpl(RetraitRemoteDataSource(client));
     retraitCubit = RetraitCubit(
@@ -79,7 +80,27 @@ class _PaymentsPageState extends State<PaymentsPage> {
       AddRetrait(retraitRepo),
       UpdateRetrait(retraitRepo),
       DeleteRetrait(retraitRepo),
-    )..loadData();
+    );
+
+    _loadInitialData(getMembers);
+  }
+
+  /// Charge la liste des membres une seule fois et la partage entre les
+  /// deux cubits, au lieu de la récupérer deux fois en double au chargement
+  /// de la page (une fois pour les versements, une fois pour les retraits).
+  Future<void> _loadInitialData(GetMembers getMembers) async {
+    try {
+      final members = await getMembers();
+      await Future.wait([
+        paymentsCubit.loadData(members: members),
+        retraitCubit.loadData(members: members),
+      ]);
+    } catch (_) {
+      await Future.wait([
+        paymentsCubit.loadData(),
+        retraitCubit.loadData(),
+      ]);
+    }
   }
 
   @override
@@ -228,7 +249,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
               items: List.generate(12, (i) => i + 1)
                   .map((m) => DropdownMenuItem(
                         value: m,
-                        child: Text('Mois $m'),
+                        child: Text(monthNameFr(m)),
                       ))
                   .toList(),
               onChanged: (v) => setState(() => selectedMonth = v!),
@@ -285,8 +306,9 @@ class _PaymentsPageState extends State<PaymentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final canModify =
-        Provider.of<AuthProvider>(context, listen: false).canModify;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final canManageVersements = auth.isComptable;
+    final canManageRetraits = auth.isComptable;
 
     return MultiBlocProvider(
       providers: [
@@ -295,15 +317,16 @@ class _PaymentsPageState extends State<PaymentsPage> {
       ],
       child: Scaffold(
         appBar: const CurvedAppBar(title: 'Finance'),
-        floatingActionButton: canModify
-            ? FloatingActionButton(
-                onPressed: _showVersements
-                    ? _openAddPaymentModal
-                    : _openAddRetraitModal,
-                backgroundColor: const Color(0xff0b5260),
-                child: const Icon(Icons.add, color: Colors.white),
-              )
-            : null,
+        floatingActionButton:
+            (_showVersements ? canManageVersements : canManageRetraits)
+                ? FloatingActionButton(
+                    onPressed: _showVersements
+                        ? _openAddPaymentModal
+                        : _openAddRetraitModal,
+                    backgroundColor: const Color(0xff0b5260),
+                    child: const Icon(Icons.add, color: Colors.white),
+                  )
+                : null,
         body: Column(
           children: [
             _buildToggle(),
@@ -325,10 +348,10 @@ class _PaymentsPageState extends State<PaymentsPage> {
                                 payments: _filteredPayments,
                                 memberMap: state.memberMap,
                                 searchQuery: searchQuery,
-                                onEdit: canModify
+                                onEdit: canManageVersements
                                     ? _openEditPaymentModal
                                     : null,
-                                onDelete: canModify
+                                onDelete: canManageVersements
                                     ? (id) async {
                                         final confirmed = await _confirmDelete(
                                             context, 'ce versement');
@@ -364,10 +387,10 @@ class _PaymentsPageState extends State<PaymentsPage> {
                               child: RetraitList(
                                 retraits: _filteredRetraits,
                                 memberMap: state.memberMap,
-                                onEdit: canModify
+                                onEdit: canManageRetraits
                                     ? _openEditRetraitModal
                                     : null,
-                                onDelete: canModify
+                                onDelete: canManageRetraits
                                     ? (id) async {
                                         final confirmed = await _confirmDelete(
                                             context, 'ce retrait');

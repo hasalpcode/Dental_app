@@ -14,9 +14,28 @@ class AuthProvider extends ChangeNotifier {
 
   bool get canModify => user?.role.isAdmin ?? false;
   bool get isUser => user?.role.isUser ?? false;
+  bool get isComptable => user?.role.isComptable ?? false;
+
+  /// Restaure la session si un token valide est déjà stocké localement.
+  Future<bool> tryAutoLogin() async {
+    final token = await UserStorage.getToken();
+    if (token == null || !UserStorage.isTokenValid(token)) {
+      if (token != null) await UserStorage.clear();
+      return false;
+    }
+
+    final storedUser = await UserStorage.getUser();
+    if (storedUser == null) return false;
+
+    user = storedUser;
+    notifyListeners();
+    return true;
+  }
 
   Future<bool> login(String email, String password) async {
     isLoading = true;
+    error = null;
+    notifyListeners();
 
     try {
       user = await loginUser(email, password);

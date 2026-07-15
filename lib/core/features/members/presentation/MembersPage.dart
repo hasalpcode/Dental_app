@@ -9,10 +9,10 @@ import 'package:dental_app/core/features/members/presentation/bloc/members_cubit
 import 'package:dental_app/core/features/members/presentation/bloc/members_state.dart';
 import 'package:dental_app/core/features/members/presentation/widgets/add_member_modal.dart';
 import 'package:dental_app/core/features/members/presentation/widgets/member_list.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 
@@ -41,7 +41,7 @@ class _MembersPageState extends State<MembersPage> {
       setState(() => searchQuery = searchController.text);
     });
 
-    final dataSource = MemberRemoteDataSource(http.Client());
+    final dataSource = MemberRemoteDataSource(ApiClient.instance);
     repository = MemberRepositoryImpl(dataSource);
 
     getMembersUseCase = GetMembers(repository);

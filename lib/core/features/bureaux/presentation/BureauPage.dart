@@ -9,9 +9,9 @@ import 'package:dental_app/core/features/bureaux/domain/usecases/update_bureau.d
 import 'package:dental_app/core/features/bureaux/presentation/BureauDetailPage.dart';
 import 'package:dental_app/core/features/bureaux/presentation/widgets/add_bureau_modal.dart';
 import 'package:dental_app/core/features/bureaux/presentation/widgets/bureaux_list.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class BureauPage extends StatefulWidget {
@@ -36,7 +36,7 @@ class _BureauPageState extends State<BureauPage> {
   @override
   void initState() {
     super.initState();
-    repository = BureauRepositoryImpl(BureauRemoteDataSource(http.Client()));
+    repository = BureauRepositoryImpl(BureauRemoteDataSource(ApiClient.instance));
     getBureaux = GetBureaux(repository);
     addBureau = AddBureau(repository);
     updateBureau = UpdateBureau(repository);
@@ -162,14 +162,12 @@ class _BureauPageState extends State<BureauPage> {
   }
 
   void _openAddModal() {
-    final bureauIds = bureaux.map((b) => b.bureauId).toList();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddBureauModal(
         bureau: null,
-        bureaus: bureauIds.isEmpty ? [1, 2, 3] : bureauIds,
         onSubmit: (b) async {
           await addBureau(b);
           await _loadBureaux();
@@ -179,10 +177,16 @@ class _BureauPageState extends State<BureauPage> {
   }
 
   void _openEditModal(BureauEntity bureau) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BureauDetailPage(bureau: bureau),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddBureauModal(
+        bureau: bureau,
+        onSubmit: (b) async {
+          await updateBureau(b);
+          await _loadBureaux();
+        },
       ),
     );
   }

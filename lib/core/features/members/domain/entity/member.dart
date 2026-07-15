@@ -3,7 +3,7 @@ class Member {
   int? userId;
   final String username;
   final String tel;
-  final String address;
+  final String addresse;
   final int? bureauId;
   final String? posteId;
   final DateTime? dateAdhesion;
@@ -16,7 +16,7 @@ class Member {
     this.userId,
     required this.username,
     required this.tel,
-    required this.address,
+    required this.addresse,
     this.bureauId,
     this.posteId,
     this.dateAdhesion,

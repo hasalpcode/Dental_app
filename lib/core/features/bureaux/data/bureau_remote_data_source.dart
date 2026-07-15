@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dental_app/core/features/bureaux/data/bureau_model.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 
 class BureauRemoteDataSource {
@@ -9,7 +10,7 @@ class BureauRemoteDataSource {
   BureauRemoteDataSource(this.client);
 
   final String baseUrl =
-      'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app/member-service';
+      'https://service-gatway-production.up.railway.app/member-service';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -25,8 +26,10 @@ class BureauRemoteDataSource {
       Uri.parse('$baseUrl/api/bureaux'),
       headers: await _getHeaders(),
     );
-    print('BUREAUX STATUS: ${response.statusCode}');
-    print('BUREAUX BODY: ${response.body}');
+    if (kDebugMode) {
+      print('BUREAUX STATUS: ${response.statusCode}');
+      print('BUREAUX BODY: ${response.body}');
+    }
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       return data.map((e) => BureauModel.fromJson(e)).toList();

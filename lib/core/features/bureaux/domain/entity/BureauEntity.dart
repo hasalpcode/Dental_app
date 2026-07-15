@@ -1,10 +1,10 @@
 class BureauEntity {
-  final int bureauId;
+  final int? bureauId;
   final String name;
   final String description;
 
   BureauEntity({
-    required this.bureauId,
+    this.bureauId,
     required this.name,
     required this.description,
   });

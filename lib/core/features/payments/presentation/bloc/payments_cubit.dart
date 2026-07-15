@@ -23,12 +23,12 @@ class PaymentsCubit extends Cubit<PaymentsState> {
     this.deletePaymentUseCase,
   ) : super(const PaymentsState());
 
-  Future<void> loadData() async {
+  Future<void> loadData({List<Member>? members}) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final results = await Future.wait([
         getPaymentsUseCase(),
-        getMembersUseCase(),
+        members != null ? Future.value(members) : getMembersUseCase(),
       ]);
       emit(state.copyWith(
         isLoading: false,

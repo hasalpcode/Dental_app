@@ -23,12 +23,12 @@ class RetraitCubit extends Cubit<RetraitState> {
     this.deleteRetraitUseCase,
   ) : super(const RetraitState());
 
-  Future<void> loadData() async {
+  Future<void> loadData({List<Member>? members}) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final results = await Future.wait([
         getRetraitsUseCase(),
-        getMembersUseCase(),
+        members != null ? Future.value(members) : getMembersUseCase(),
       ]);
       emit(state.copyWith(
         isLoading: false,

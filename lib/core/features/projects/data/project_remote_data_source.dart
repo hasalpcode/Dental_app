@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dental_app/core/features/projects/data/project_model.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 
 class ProjectImage {
@@ -12,7 +13,10 @@ class ProjectImage {
 }
 
 class ProjectRemoteDataSource {
-  final String baseUrl = 'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app';
+  final http.Client client;
+  final String baseUrl = 'https://service-gatway-production.up.railway.app';
+
+  ProjectRemoteDataSource(this.client);
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -27,11 +31,11 @@ class ProjectRemoteDataSource {
   // for projects
   Future<List<ProjectModel>> getProjects() async {
     final headers = await _getHeaders();
-    final response = await http.get(
+    final response = await client.get(
         Uri.parse('$baseUrl/member-service/api/projects'),
         headers: headers);
     if (response.statusCode == 200) {
-      print("PROJECTS RESPONSE: ${response.body}");
+      if (kDebugMode) print("PROJECTS RESPONSE: ${response.body}");
       List jsonResponse = json.decode(response.body);
       return jsonResponse
           .map((project) => ProjectModel.fromJson(project))
@@ -44,7 +48,7 @@ class ProjectRemoteDataSource {
   Future<ProjectModel> addProject(ProjectModel project) async {
     final headers = await _getHeaders();
 
-    final response = await http.post(
+    final response = await client.post(
       Uri.parse('$baseUrl/member-service/api/projects'),
       headers: headers,
       body: json.encode(project.toJson()),
@@ -58,13 +62,15 @@ class ProjectRemoteDataSource {
 
   Future<ProjectModel> updateProject(ProjectModel project) async {
     final headers = await _getHeaders();
-    final response = await http.put(
+    final response = await client.put(
       Uri.parse('$baseUrl/member-service/api/projects/${project.projectId}'),
       headers: headers,
       body: json.encode(project.toJson()),
     );
 
-    print("PR PROJECT RESPONSE: ${response.statusCode} - ${response.body}");
+    if (kDebugMode) {
+      print("PR PROJECT RESPONSE: ${response.statusCode} - ${response.body}");
+    }
     if (response.statusCode == 200) {
       return ProjectModel.fromJson(json.decode(response.body));
     } else {
@@ -74,7 +80,7 @@ class ProjectRemoteDataSource {
 
   Future<void> deleteProject(int id) async {
     final headers = await _getHeaders();
-    final response = await http.delete(
+    final response = await client.delete(
         Uri.parse('$baseUrl/member-service/api/projects/$id'),
         headers: headers);
     if (response.statusCode != 204) {
@@ -84,7 +90,7 @@ class ProjectRemoteDataSource {
 
   Future<List<ProjectImage>> getProjectImages(int projectId) async {
     final headers = await _getHeaders();
-    final response = await http.get(
+    final response = await client.get(
       Uri.parse('$baseUrl/member-service/api/imgprojects/$projectId/images'),
       headers: headers,
     );
@@ -126,7 +132,7 @@ class ProjectRemoteDataSource {
 
     request.files.add(await http.MultipartFile.fromPath('file', image.path));
 
-    final streamed = await request.send();
+    final streamed = await client.send(request);
     if (streamed.statusCode != 200 && streamed.statusCode != 201) {
       final body = await streamed.stream.bytesToString();
       throw Exception('Erreur upload image: ${streamed.statusCode} - $body');
@@ -135,13 +141,12 @@ class ProjectRemoteDataSource {
 
   Future<void> deleteProjectImage(int projectId, String imageId) async {
     final headers = await _getHeaders();
-    final response = await http.delete(
+    final response = await client.delete(
       Uri.parse(
           '$baseUrl/member-service/api/imgprojects/$projectId/images/$imageId'),
       headers: headers,
     );
-    if (response.statusCode != 200 &&
-        response.statusCode != 204) {
+    if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception(
           'Erreur suppression image: ${response.statusCode} - ${response.body}');
     }

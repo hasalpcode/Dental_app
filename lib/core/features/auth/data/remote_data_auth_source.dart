@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dental_app/core/features/auth/data/user_model.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 
 class AuthRemoteDataSource {
@@ -11,13 +12,13 @@ class AuthRemoteDataSource {
   // juste pour le ngrok, à remplacer par la methode ci-dessous
   Future<UserModel> login(String email, String password) async {
     final client = HttpClient();
-    client.badCertificateCallback =
-        (X509Certificate cert, String host, int port) => true;
+    // client.badCertificateCallback =
+    //     (X509Certificate cert, String host, int port) => true;
 
     try {
       final request = await client
           .postUrl(Uri.parse(
-              'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app/user-service/auth/login'))
+              'https://service-gatway-production.up.railway.app/user-service/auth/login'))
           .timeout(const Duration(seconds: 10));
 
       request.headers.set(HttpHeaders.contentTypeHeader, "application/json");
@@ -29,8 +30,10 @@ class AuthRemoteDataSource {
       final response = await request.close();
 
       final responseBody = await response.transform(utf8.decoder).join();
-      print('Status code: ${response.statusCode}');
-      print('Body: $responseBody');
+      if (kDebugMode) {
+        print('Status code: ${response.statusCode}');
+        print('Body: $responseBody');
+      }
 
       if (response.statusCode == 200) {
         return UserModel.fromJson(jsonDecode(responseBody));
@@ -39,7 +42,7 @@ class AuthRemoteDataSource {
             "Login failed: ${response.statusCode} - ${responseBody}");
       }
     } catch (e) {
-      print('Error: $e');
+      if (kDebugMode) print('Error: $e');
       rethrow;
     } finally {
       client.close();

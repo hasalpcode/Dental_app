@@ -27,7 +27,9 @@ class BureauxList extends StatelessWidget {
           project: p,
           onDetails: () => onDetails(p),
           onEdit: onEdit != null ? () => onEdit!(p) : null,
-          onDelete: onDelete != null ? () => onDelete!(p.bureauId) : null,
+          onDelete: onDelete != null && p.bureauId != null
+              ? () => onDelete!(p.bureauId!)
+              : null,
         );
       },
     );

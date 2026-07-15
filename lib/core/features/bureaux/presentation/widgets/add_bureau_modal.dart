@@ -4,35 +4,22 @@ import 'package:flutter/material.dart';
 class AddBureauModal extends StatefulWidget {
   final Function(BureauEntity) onSubmit;
   final BureauEntity? bureau;
-  final List<int> bureaus;
 
-  const AddBureauModal(
-      {super.key, required this.onSubmit, this.bureau, required this.bureaus});
+  const AddBureauModal({super.key, required this.onSubmit, this.bureau});
 
   @override
   State<AddBureauModal> createState() => _AddBureauModalState();
 }
 
 class _AddBureauModalState extends State<AddBureauModal> {
-  int? selectedBureau;
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   bool _isSaving = false;
 
-  late List<int> availableBureaus;
-
   @override
   void initState() {
     super.initState();
-    // Assurer que le bureauId du bureau en édition existe dans la liste
-    availableBureaus = List.from(widget.bureaus);
-    if (widget.bureau != null &&
-        !availableBureaus.contains(widget.bureau!.bureauId)) {
-      availableBureaus.add(widget.bureau!.bureauId);
-    }
-
     if (widget.bureau != null) {
-      selectedBureau = widget.bureau!.bureauId;
       nameController.text = widget.bureau!.name;
       descriptionController.text = widget.bureau!.description;
     }
@@ -46,15 +33,20 @@ class _AddBureauModalState extends State<AddBureauModal> {
   }
 
   Future<void> _submit() async {
-    if (selectedBureau == null) return;
+    if (nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le nom est obligatoire')),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
 
     try {
       final bureau = BureauEntity(
-        name: nameController.text,
-        description: descriptionController.text,
-        bureauId: selectedBureau!,
+        bureauId: widget.bureau?.bureauId,
+        name: nameController.text.trim(),
+        description: descriptionController.text.trim(),
       );
       await widget.onSubmit(bureau);
       if (mounted) Navigator.pop(context);
@@ -71,6 +63,8 @@ class _AddBureauModalState extends State<AddBureauModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.bureau != null;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.only(
@@ -92,24 +86,34 @@ class _AddBureauModalState extends State<AddBureauModal> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 30),
-                    Text(
-                        widget.bureau == null ? "Ajouter Bureau" : "Modifier Bureau",
+                    Text(isEditing ? "Modifier Bureau" : "Ajouter Bureau",
                         style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Color(0xfff08024))),
                     const SizedBox(height: 20),
 
-                    // Bureau dropdown
-                    DropdownButtonFormField<int>(
-                      value: selectedBureau,
-                      items: availableBureaus
-                          .map((m) => DropdownMenuItem(
-                              value: m, child: Text(m.toString())))
-                          .toList(),
-                      onChanged: (v) => setState(() => selectedBureau = v),
+                    // NOM
+                    TextField(
+                      controller: nameController,
                       decoration: InputDecoration(
-                        labelText: "Bureau",
+                        labelText: "Nom du bureau",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide.none),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // DESCRIPTION
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: "Description",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(

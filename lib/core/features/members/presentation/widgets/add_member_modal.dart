@@ -19,6 +19,7 @@ class _AddMemberModalState extends State<AddMemberModal> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final addressController = TextEditingController();
+  final carteMembreController = TextEditingController();
 
   bool isLoading = false;
 
@@ -28,7 +29,8 @@ class _AddMemberModalState extends State<AddMemberModal> {
     if (widget.member != null) {
       nameController.text = widget.member!.username;
       phoneController.text = widget.member!.tel;
-      addressController.text = widget.member!.address;
+      addressController.text = widget.member!.addresse;
+      carteMembreController.text = widget.member!.carteMembre ?? '';
     }
   }
 
@@ -37,6 +39,7 @@ class _AddMemberModalState extends State<AddMemberModal> {
     nameController.dispose();
     phoneController.dispose();
     addressController.dispose();
+    carteMembreController.dispose();
     super.dispose();
   }
 
@@ -57,14 +60,17 @@ class _AddMemberModalState extends State<AddMemberModal> {
         userId: widget.member?.userId ?? null,
         username: nameController.text.trim(),
         tel: phoneController.text.trim(),
-        address: addressController.text.trim(),
+        addresse: addressController.text.trim(),
         bureauId: widget.member?.bureauId ?? null,
         posteId: widget.member?.posteId ?? null,
         dateAdhesion: widget.member?.dateAdhesion ?? DateTime.now(),
+        carteMembre: carteMembreController.text.trim().isEmpty
+            ? null
+            : carteMembreController.text.trim(),
       );
 
       print(
-          "Submitting member: ${member.userId}, ${member.username}, ${member.tel}, ${member.address}");
+          "Submitting member: ${member.userId}, ${member.username}, ${member.tel}, ${member.addresse}");
       await widget.onSubmit(member);
 
       if (mounted) Navigator.pop(context);
@@ -153,6 +159,22 @@ class _AddMemberModalState extends State<AddMemberModal> {
                       controller: addressController,
                       decoration: InputDecoration(
                         labelText: "Adresse",
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // CARTE MEMBRE
+                    TextField(
+                      controller: carteMembreController,
+                      decoration: InputDecoration(
+                        labelText: "Carte Membre",
                         filled: true,
                         fillColor: Colors.grey[100],
                         border: OutlineInputBorder(

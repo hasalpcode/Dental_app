@@ -43,6 +43,7 @@ class UserStorage {
         name: json['role']['name'],
       ),
       dateInscription: DateTime.parse(json['dateInscription']),
+      token: prefs.getString(_keyToken),
     );
   }
 
@@ -50,6 +51,26 @@ class UserStorage {
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyToken);
+  }
+
+  /// Vérifie si un token JWT est encore valide (non expiré)
+  static bool isTokenValid(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+
+      final normalized = base64Url.normalize(parts[1]);
+      final payload =
+          jsonDecode(utf8.decode(base64Url.decode(normalized)));
+
+      final exp = payload['exp'];
+      if (exp == null) return true;
+
+      final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return DateTime.now().isBefore(expiry);
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Supprime l'utilisateur (logout)

@@ -2,13 +2,14 @@ import 'dart:convert';
 
 import 'package:dental_app/core/features/payments/data/payment_model.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 
 class PaymentRemoteDataSource {
   final http.Client client;
   PaymentRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app';
+  final String baseUrl = 'https://service-gatway-production.up.railway.app';
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
     if (token == null) throw Exception('Utilisateur non connecté');
@@ -27,8 +28,7 @@ class PaymentRemoteDataSource {
     );
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
-      // show data in console
-      print("PAYMENTS RESPONSE: ${response.body}");
+      if (kDebugMode) print("PAYMENTS RESPONSE: ${response.body}");
       return data.map((e) => PaymentModel.fromJson(e)).toList();
     } else {
       throw Exception('Erreur récupération versements: ${response.statusCode}');
@@ -36,7 +36,7 @@ class PaymentRemoteDataSource {
   }
 
   Future<void> addPayment(PaymentModel payment) async {
-    print("Adding payment: ${payment.toJson()}");
+    if (kDebugMode) print("Adding payment: ${payment.toJson()}");
     final response = await client.post(
       Uri.parse('$baseUrl/finance-service/api/versements'),
       headers: await _getHeaders(),
@@ -44,7 +44,9 @@ class PaymentRemoteDataSource {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      print("Error response: ${response.statusCode} - ${response.body}");
+      if (kDebugMode) {
+        print("Error response: ${response.statusCode} - ${response.body}");
+      }
       throw Exception(
           'Erreur ajout versement: ${response.statusCode} - ${response.body}');
     }

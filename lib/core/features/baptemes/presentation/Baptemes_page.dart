@@ -1,8 +1,8 @@
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/widgets/add_baptem_modal.dart';
 import 'package:dental_app/core/features/baptemes/presentation/widgets/baptem_list.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:dental_app/core/usecases/curved_appbar.dart';
@@ -43,7 +43,7 @@ class _BaptismPageState extends State<BaptismPage> {
   void initState() {
     super.initState();
 
-    final dataSource = BaptismRemoteDataSource(http.Client());
+    final dataSource = BaptismRemoteDataSource(ApiClient.instance);
     repository = BaptismRepositoryImpl(dataSource);
 
     getBaptisms = GetBaptisms(repository);
@@ -74,15 +74,15 @@ class _BaptismPageState extends State<BaptismPage> {
 
   @override
   Widget build(BuildContext context) {
-    final canModify =
-        Provider.of<AuthProvider>(context, listen: false).canModify;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final canManageBaptisms = auth.canModify || auth.isComptable;
 
     return Scaffold(
       appBar: CurvedAppBar(
         title: "Baptêmes",
         leading: BackButton(onPressed: () => Navigator.pop(context)),
       ),
-      floatingActionButton: canModify
+      floatingActionButton: canManageBaptisms
           ? FloatingActionButton(
               onPressed: _openAddModal,
               backgroundColor: const Color(0xff0b5260),
@@ -97,8 +97,8 @@ class _BaptismPageState extends State<BaptismPage> {
                   onRefresh: _refresh,
                   child: BaptismsList(
                     baptisms: filteredBaptisms,
-                    onEdit: canModify ? _openEditModal : null,
-                    onDelete: canModify
+                    onEdit: canManageBaptisms ? _openEditModal : null,
+                    onDelete: canManageBaptisms
                         ? (id) async {
                             final confirmed = await showDialog<bool>(
                               context: context,

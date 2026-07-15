@@ -2,13 +2,14 @@ import 'dart:convert';
 
 import 'package:dental_app/core/features/retrait/data/retrait_model.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 
 class RetraitRemoteDataSource {
   final http.Client client;
   RetraitRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app';
+  final String baseUrl = 'https://service-gatway-production.up.railway.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -28,7 +29,7 @@ class RetraitRemoteDataSource {
     );
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
-      print("RETRAITS RESPONSE: ${response.body}");
+      if (kDebugMode) print("RETRAITS RESPONSE: ${response.body}");
       return data.map((e) => RetraitModel.fromJson(e)).toList();
     } else {
       throw Exception('Erreur récupération retraits: ${response.statusCode}');
@@ -36,7 +37,7 @@ class RetraitRemoteDataSource {
   }
 
   Future<RetraitModel> addRetrait(RetraitModel retrait) async {
-    print("Adding retrait: ${retrait.toJson()}");
+    if (kDebugMode) print("Adding retrait: ${retrait.toJson()}");
     final response = await client.post(
       Uri.parse('$baseUrl/finance-service/api/retraits'),
       headers: await _getHeaders(),

@@ -1,6 +1,5 @@
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/Baptemes_page.dart';
-import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:dental_app/core/features/payments/data/payment_remote_data_source.dart';
 import 'package:dental_app/core/features/payments/data/payment_repository_impl.dart';
@@ -10,11 +9,15 @@ import 'package:dental_app/core/features/members/data/member_repository_impl.dar
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
+import 'package:dental_app/core/features/retrait/data/retrait_remote_data_source.dart';
+import 'package:dental_app/core/features/retrait/data/retrait_repository_impl.dart';
+import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
+import 'package:dental_app/core/features/retrait/domain/usecases/get_retraits.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,47 +31,32 @@ class _HomePageState extends State<HomePage> {
 
   late final PaymentRepositoryImpl paymentRepository;
   late final MemberRepositoryImpl memberRepository;
+  late final RetraitRepositoryImpl retraitRepository;
   late final GetPayments getPayments;
   late final GetMembers getMembers;
+  late final GetRetraits getRetraits;
 
   List<PaymentEntity> payments = [];
   List<Member> members = [];
+  List<RetraitEntity> retraits = [];
 
   int totalMembers = 0;
   double totalBalance = 0;
 
   bool isLoading = true;
 
-  // Fallback data
-  final Map<int, List<double>> yearlyData = {
-    2023: [400, 600, 900, 700, 1000, 800, 1200, 1300, 900, 1100, 1400, 1500],
-    2024: [500, 800, 1200, 900, 1400, 1100, 1500, 1700, 1300, 1600, 1800, 2000],
-    2025: [
-      600,
-      900,
-      1400,
-      1100,
-      1500,
-      1300,
-      1700,
-      1900,
-      1500,
-      1800,
-      2000,
-      2200
-    ],
-  };
-
   @override
   void initState() {
     super.initState();
-    final client = http.Client();
+    final client = ApiClient.instance;
 
     paymentRepository = PaymentRepositoryImpl(PaymentRemoteDataSource(client));
     memberRepository = MemberRepositoryImpl(MemberRemoteDataSource(client));
+    retraitRepository = RetraitRepositoryImpl(RetraitRemoteDataSource(client));
 
     getPayments = GetPayments(paymentRepository);
     getMembers = GetMembers(memberRepository);
+    getRetraits = GetRetraits(retraitRepository);
 
     _loadData();
   }
@@ -80,20 +68,23 @@ class _HomePageState extends State<HomePage> {
       final results = await Future.wait([
         getPayments(),
         getMembers(),
+        getRetraits(),
       ]);
 
       payments = results[0] as List<PaymentEntity>;
       members = results[1] as List<Member>;
+      retraits = results[2] as List<RetraitEntity>;
 
-      // Calculate stats
       totalMembers = members.length;
-      totalBalance = payments.fold(0, (sum, p) => sum + p.montant);
-
-      print("✅ Loaded ${totalMembers} members and ${payments.length} payments");
+      final totalVersements =
+          payments.fold(0.0, (sum, p) => sum + p.montant);
+      final totalRetraits =
+          retraits.fold(0.0, (sum, r) => sum + r.montant);
+      totalBalance = totalVersements - totalRetraits;
     } catch (e) {
-      print("❌ Error loading data: $e");
+      debugPrint("Erreur chargement dashboard: $e");
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -101,7 +92,6 @@ class _HomePageState extends State<HomePage> {
     List<double> monthlyTotals = List.generate(12, (_) => 0);
 
     for (var payment in payments) {
-      // Use dateVersement.year if available, otherwise attribute to selected year
       final paymentYear = payment.dateVersement?.year ?? year;
       if (paymentYear != year) continue;
 
@@ -121,8 +111,30 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    print("📊 Monthly data for $year: $monthlyTotals");
     return monthlyTotals;
+  }
+
+  Set<int> get _payingMembersThisMonth {
+    final now = DateTime.now();
+    return payments
+        .where((p) {
+          final d = p.dateVersement;
+          return d != null && d.year == now.year && d.month == now.month;
+        })
+        .expand((p) => p.membreId)
+        .toSet();
+  }
+
+  double get _participationRate {
+    if (members.isEmpty) return 0;
+    return _payingMembersThisMonth.length / members.length;
+  }
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Bonjour';
+    if (hour < 18) return 'Bon après-midi';
+    return 'Bonsoir';
   }
 
   @override
@@ -132,27 +144,47 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xffF5F7FB),
       appBar: CurvedAppBar(
-          title: "DÉNTAL",
-          option:
-              auth.user != null ? "Bienvenue! ${auth.user!.username}" : null),
+        title: "DÉNTAL",
+        option: auth.user != null
+            ? "$_greeting, ${auth.user!.username}"
+            : null,
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildStatsRow(),
-                  const SizedBox(height: 16),
-                  _buildPaymentChart(),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle("Actions rapides"),
-                  const SizedBox(height: 12),
-                  _buildQuickActions(),
-                  // const SizedBox(height: 20),
-                  // _buildSectionTitle("Activité récente"),
-                  // const SizedBox(height: 12),
-                  // _buildActivityList(),
-                ],
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 700),
+                        child: Column(
+                          children: [
+                            _FadeSlideIn(child: _buildStatsRow()),
+                            const SizedBox(height: 16),
+                            _FadeSlideIn(
+                              delayMs: 80,
+                              child: _buildParticipationCard(),
+                            ),
+                            const SizedBox(height: 16),
+                            _FadeSlideIn(
+                              delayMs: 160,
+                              child: _buildPaymentChart(),
+                            ),
+                            const SizedBox(height: 20),
+                            _FadeSlideIn(
+                              delayMs: 240,
+                              child: _buildBaptemeBanner(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
     );
@@ -177,6 +209,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _statCard(String title, String value, IconData icon, Color color) {
     return Container(
+      height: 130,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -193,15 +226,85 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(icon, color: Colors.white),
-          const SizedBox(height: 10),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold)),
-          Text(title, style: const TextStyle(color: Colors.white70)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(value,
+                maxLines: 1,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold)),
+          ),
+          Text(title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70)),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 TAUX DE PARTICIPATION
+  Widget _buildParticipationCard() {
+    final rate = _participationRate;
+    final payingCount = _payingMembersThisMonth.length;
+    final now = DateTime.now();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 10),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  "Cotisations de ${monthNameFr(now.month)}",
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Text(
+                "${(rate * 100).toStringAsFixed(0)}%",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xfff08024),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: rate.clamp(0, 1),
+              minHeight: 10,
+              backgroundColor: Colors.grey[200],
+              valueColor:
+                  const AlwaysStoppedAnimation(Color(0xfff08024)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            totalMembers == 0
+                ? "Aucun membre enregistré"
+                : "$payingCount sur $totalMembers membres à jour",
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
         ],
       ),
     );
@@ -210,6 +313,7 @@ class _HomePageState extends State<HomePage> {
   // 🔹 CHART AVEC FILTRE
   Widget _buildPaymentChart() {
     final data = _getMonthlyData(selectedYear);
+    final double total = data.fold(0, (sum, v) => sum + v);
     final double maxY =
         data.isEmpty ? 1000 : (data.reduce((a, b) => a > b ? a : b) * 1.2);
 
@@ -252,8 +356,13 @@ class _HomePageState extends State<HomePage> {
               )
             ],
           ),
+          const SizedBox(height: 4),
+          Text(
+            "Total $selectedYear : ${total.toStringAsFixed(0)} FCFA",
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // 📊 BAR CHART
           if (data.every((v) => v == 0))
@@ -280,7 +389,32 @@ class _HomePageState extends State<HomePage> {
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: maxY > 0 ? maxY : 1000,
-                  barTouchData: BarTouchData(enabled: true),
+                  barTouchData: BarTouchData(
+                    enabled: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      tooltipBgColor: const Color(0xff0b5260),
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        return BarTooltipItem(
+                          "${monthNameFr(group.x.toInt() + 1)}\n",
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: "${rod.toY.toStringAsFixed(0)} FCFA",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       sideTitles:
@@ -334,118 +468,104 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 🔹 TITRE
-  Widget _buildSectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  // 🔹 QUICK ACTIONS
-  Widget _buildQuickActions() {
-    return SizedBox(
-      height: 110,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          _actionCard("Membres", Icons.people, const Color(0xfff08024)),
-          _actionCard("Versements", Icons.payment, const Color(0xff0b5260)),
-          _actionCard("Projets", Icons.work, const Color(0xfff08024)),
-          _actionCard(
-              "Bureaux", Icons.account_balance, const Color(0xff0b5260)),
-          _actionCard(
-            "Baptêmes",
-            Icons.church,
-            const Color(0xfff08024),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => BaptismPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionCard(
-    String title,
-    IconData icon,
-    Color color, {
-    VoidCallback? onTap,
-  }) {
+  // 🔹 BAPTÊMES (seul module qui n'a pas d'onglet dans le menu)
+  Widget _buildBaptemeBanner() {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => BaptismPage()),
+        );
+      },
       child: Container(
-        width: 140,
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(12),
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            colors: [Color(0xff0b5260), Color(0xff137a8f)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: const [
             BoxShadow(color: Colors.black12, blurRadius: 10),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(0.15),
-              child: Icon(icon, color: color),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.church_rounded,
+                  color: Colors.white, size: 28),
             ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Baptêmes",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    "Gérer les baptêmes et contributions",
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white, size: 16),
           ],
         ),
       ),
     );
   }
+}
 
-  // 🔹 ACTIVITÉS
-//   Widget _buildActivityList() {
-//     final activities = [
-//       "John paid monthly fee",
-//       "New member added",
-//       "Project created",
-//     ];
+// 🔹 Petite animation d'entrée en fondu + glissement pour le dashboard
+class _FadeSlideIn extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
 
-//     return Column(
-//       children: activities.map((e) {
-//         return Container(
-//           margin: const EdgeInsets.only(bottom: 10),
-//           padding: const EdgeInsets.all(14),
-//           decoration: BoxDecoration(
-//             color: Colors.white,
-//             borderRadius: BorderRadius.circular(18),
-//             boxShadow: const [
-//               BoxShadow(color: Colors.black12, blurRadius: 5),
-//             ],
-//           ),
-//           child: Row(
-//             children: [
-//               Container(
-//                 padding: const EdgeInsets.all(10),
-//                 decoration: BoxDecoration(
-//                   color: Colors.deepPurple.withOpacity(0.1),
-//                   shape: BoxShape.circle,
-//                 ),
-//                 child:
-//                     const Icon(Icons.notifications, color: Colors.deepPurple),
-//               ),
-//               const SizedBox(width: 10),
-//               Expanded(child: Text(e)),
-//             ],
-//           ),
-//         );
-//       }).toList(),
-//     );
-//   }
+  const _FadeSlideIn({required this.child, this.delayMs = 0});
+
+  @override
+  State<_FadeSlideIn> createState() => _FadeSlideInState();
+}
+
+class _FadeSlideInState extends State<_FadeSlideIn> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _visible ? 1 : 0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+      child: AnimatedSlide(
+        offset: _visible ? Offset.zero : const Offset(0, 0.05),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
 }

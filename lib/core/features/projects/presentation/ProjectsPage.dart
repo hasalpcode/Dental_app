@@ -14,10 +14,10 @@ import 'package:dental_app/core/features/projects/presentation/widgets/add_proje
 import 'package:dental_app/core/features/projects/presentation/widgets/projects_list.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/projects/presentation/ProjectDetailPage.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 class ProjectsPage extends StatefulWidget {
@@ -42,7 +42,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
   void initState() {
     super.initState();
 
-    final dataSource = ProjectRemoteDataSource();
+    final dataSource = ProjectRemoteDataSource(ApiClient.instance);
     repository = ProjectRepositoryImpl(dataSource);
 
     getProjectsUseCase = GetProjects(repository);
@@ -50,8 +50,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
     updateProjectUseCase = UpdateProject(repository);
     deleteProjectUseCase = DeleteProject(repository);
 
-    getBureauxUseCase =
-        GetBureaux(BureauRepositoryImpl(BureauRemoteDataSource(http.Client())));
+    getBureauxUseCase = GetBureaux(
+        BureauRepositoryImpl(BureauRemoteDataSource(ApiClient.instance)));
 
     projectsCubit = ProjectsCubit(
       getProjectsUseCase,
@@ -68,8 +68,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
     try {
       final bureaux = await getBureauxUseCase();
       if (mounted) {
-        setState(
-            () => _bureauIds = bureaux.map((b) => b.bureauId).toList());
+        setState(() => _bureauIds =
+            bureaux.map((b) => b.bureauId).whereType<int>().toList());
       }
     } catch (_) {
       // Le formulaire fonctionne toujours sans bureau pré-rempli
@@ -93,17 +93,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
         bureaus: _bureauIds,
-        onSubmit: (p) async {
-          try {
-            await projectsCubit.addProject(p);
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erreur ajout projet: $e')),
-              );
-            }
-          }
-        },
+        onSubmit: (p) => projectsCubit.addProject(p),
       ),
     );
   }
@@ -116,17 +106,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       builder: (_) => AddProjectModal(
         project: project,
         bureaus: _bureauIds,
-        onSubmit: (p) async {
-          try {
-            await projectsCubit.updateProject(p);
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erreur modification projet: $e')),
-              );
-            }
-          }
-        },
+        onSubmit: (p) => projectsCubit.updateProject(p),
       ),
     );
   }
@@ -194,9 +174,18 @@ class _ProjectsPageState extends State<ProjectsPage> {
                                       );
 
                                       if (confirmed ?? false) {
-                                        await context
-                                            .read<ProjectsCubit>()
-                                            .deleteProject(id);
+                                        try {
+                                          await context
+                                              .read<ProjectsCubit>()
+                                              .deleteProject(id);
+                                        } catch (e) {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                                        'Erreur suppression: $e')));
+                                          }
+                                        }
                                       }
                                     }
                                   : null,

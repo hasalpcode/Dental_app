@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/projects/data/project_remote_data_source.dart';
 import 'package:dental_app/core/features/projects/domain/entity/project_entity.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/helpers/date_helpers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +20,7 @@ class ProjectDetailPage extends StatefulWidget {
 }
 
 class _ProjectDetailPageState extends State<ProjectDetailPage> {
-  final _dataSource = ProjectRemoteDataSource();
+  final _dataSource = ProjectRemoteDataSource(ApiClient.instance);
   final _picker = ImagePicker();
 
   List<ProjectImage> _images = [];
@@ -280,19 +282,16 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          image.url,
+                        CachedNetworkImage(
+                          imageUrl: image.url,
                           fit: BoxFit.cover,
-                          loadingBuilder: (_, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              color: Colors.grey[200],
-                              child: const Center(
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2)),
-                            );
-                          },
-                          errorBuilder: (_, __, ___) => Container(
+                          placeholder: (_, __) => Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2)),
+                          ),
+                          errorWidget: (_, __, ___) => Container(
                             color: Colors.grey[200],
                             child: const Icon(Icons.broken_image,
                                 color: Colors.grey),
@@ -350,7 +349,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           ),
           body: Center(
             child: InteractiveViewer(
-              child: Image.network(url, fit: BoxFit.contain),
+              child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain),
             ),
           ),
         ),

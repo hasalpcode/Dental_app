@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:dental_app/core/features/baptemes/domain/entity/bapteme_entity.dart';
 import 'package:dental_app/core/features/baptemes/domain/entity/contribution.dart';
 import 'package:dental_app/core/features/members/data/data_remote_source.dart';
@@ -7,6 +6,7 @@ import 'package:dental_app/core/features/members/data/member_model.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/helpers/date_helpers.dart';
 
 class AddBaptismModal extends StatefulWidget {
@@ -33,6 +33,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
   List<Contribution> _contributions = [];
   int? _selectedMemberId;
   bool _isSaving = false;
+  bool _isEditingContribution = false;
   late final Future<void> _membersFuture;
 
   @override
@@ -50,7 +51,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
   }
 
   Future<void> _loadMembers() async {
-    final repo = MemberRepositoryImpl(MemberRemoteDataSource(http.Client()));
+    final repo = MemberRepositoryImpl(MemberRemoteDataSource(ApiClient.instance));
     final getMembers = GetMembers(repo);
     final members = await getMembers();
     setState(() {
@@ -178,18 +179,36 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                               decoration: _inputDecoration('Montant FCFA'),
                             ),
                             const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: _addContribution,
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: const Color(0xfff08024),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: _addContribution,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 14),
+                                      backgroundColor:
+                                          const Color(0xfff08024),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(15),
+                                      ),
+                                    ),
+                                    child: Text(_isEditingContribution
+                                        ? 'Mettre à jour'
+                                        : 'Ajouter contribution'),
+                                  ),
                                 ),
-                              ),
-                              child: const Text('Ajouter contribution'),
+                                if (_isEditingContribution) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: _cancelEditContribution,
+                                    icon: const Icon(Icons.close),
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         );
@@ -197,27 +216,100 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
                     ),
                     const SizedBox(height: 15),
                     if (_contributions.isEmpty)
-                      const Text('Aucune contribution ajoutée.')
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.groups_outlined,
+                                size: 36, color: Colors.grey[400]),
+                            const SizedBox(height: 8),
+                            Text('Aucune contribution ajoutée.',
+                                style: TextStyle(color: Colors.grey[500])),
+                          ],
+                        ),
+                      )
                     else
                       Column(
                         children: _contributions.map((contribution) {
                           final memberName = _memberName(contribution.membreId);
-                          return Card(
+                          final initial =
+                              memberName.isNotEmpty ? memberName[0] : '?';
+                          return Container(
                             margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              title: Text(memberName),
-                              subtitle: Text('ID: ${contribution.membreId}'),
-                              trailing: Text(
-                                  '${contribution.montant.toStringAsFixed(2)} FCFA'),
-                              leading: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  setState(() {
-                                    _contributions.remove(contribution);
-                                  });
-                                },
-                              ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: const [
+                                BoxShadow(
+                                    color: Colors.black12, blurRadius: 6),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor:
+                                      const Color(0xff0b5260).withOpacity(0.15),
+                                  child: Text(
+                                    initial.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Color(0xff0b5260),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    memberName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        const Color(0xfff08024).withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${contribution.montant.toStringAsFixed(0)} FCFA',
+                                    style: const TextStyle(
+                                      color: Color(0xfff08024),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit,
+                                      color: Color(0xff0b5260), size: 20),
+                                  onPressed: () =>
+                                      _editContribution(contribution),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      _contributions.remove(contribution);
+                                      if (_selectedMemberId ==
+                                          contribution.membreId) {
+                                        _cancelEditContribution();
+                                      }
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -271,7 +363,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
         userId: null,
         name: 'Membre #$membreId',
         phone: '',
-        address: '',
+        addresse: '',
       ),
     );
     return member.displayName;
@@ -301,6 +393,24 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
         ),
       );
       _selectedMemberId = null;
+      _isEditingContribution = false;
+      montantController.clear();
+    });
+  }
+
+  void _editContribution(Contribution contribution) {
+    setState(() {
+      _contributions.remove(contribution);
+      _selectedMemberId = contribution.membreId;
+      montantController.text = contribution.montant.toString();
+      _isEditingContribution = true;
+    });
+  }
+
+  void _cancelEditContribution() {
+    setState(() {
+      _selectedMemberId = null;
+      _isEditingContribution = false;
       montantController.clear();
     });
   }

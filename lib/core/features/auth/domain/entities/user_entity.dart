@@ -34,6 +34,7 @@ class Role {
 
   bool get isAdmin => name.toUpperCase() == 'ADMIN';
   bool get isUser => name.toUpperCase() == 'USER';
+  bool get isComptable => name.toUpperCase() == 'COMPTABLE';
 
   factory Role.fromJson(Map<String, dynamic> json) {
     return Role(

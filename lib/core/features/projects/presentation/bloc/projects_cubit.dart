@@ -36,6 +36,7 @@ class ProjectsCubit extends Cubit<ProjectsState> {
       await loadProjects();
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
+      rethrow;
     }
   }
 
@@ -46,6 +47,7 @@ class ProjectsCubit extends Cubit<ProjectsState> {
       await loadProjects();
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: e.toString()));
+      rethrow;
     }
   }
 
@@ -56,6 +58,7 @@ class ProjectsCubit extends Cubit<ProjectsState> {
       await loadProjects();
     } catch (e) {
       emit(state.copyWith(isDeleting: false, error: e.toString()));
+      rethrow;
     }
   }
 }

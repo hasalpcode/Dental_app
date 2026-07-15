@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:dental_app/core/features/members/data/member_model.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:http/http.dart' as http;
 
 class MemberRemoteDataSource {
@@ -9,7 +9,7 @@ class MemberRemoteDataSource {
 
   MemberRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://fc96-2001-4278-12-bdfd-74c6-bbb7-f015-3347.ngrok-free.app';
+  final String baseUrl = 'https://service-gatway-production.up.railway.app';
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await UserStorage.getToken();
@@ -29,8 +29,10 @@ class MemberRemoteDataSource {
       headers: headers,
     );
 
-    print("STATUS: ${response.statusCode}");
-    print("BODY: ${response.body}");
+    if (kDebugMode) {
+      print("STATUS: ${response.statusCode}");
+      print("BODY: ${response.body}");
+    }
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
@@ -48,13 +50,15 @@ class MemberRemoteDataSource {
       headers: headers,
       body: jsonEncode({
         "username": member.username,
-        "email": member.username.toLowerCase(),
+        "email": member.tel,
         "password": "1234",
         "role": "USER",
       }),
     );
-    print("ADD USER BODY: ${addUserMember.body}");
-    print("ADD USER STATUS: ${addUserMember.statusCode}");
+    if (kDebugMode) {
+      print("ADD USER BODY: ${addUserMember.body}");
+      print("ADD USER STATUS: ${addUserMember.statusCode}");
+    }
     if (addUserMember.statusCode != 200 && addUserMember.statusCode != 201) {
       throw Exception(
           'Erreur création utilisateur pour membre: ${addUserMember.statusCode} - ${addUserMember.body}');
@@ -62,16 +66,20 @@ class MemberRemoteDataSource {
       member.userId = jsonDecode(addUserMember.body)['userId'];
     }
 
-    print("Creating member with userId: ${member.userId}");
-    print("Member data: ${member.toJson()}");
+    if (kDebugMode) {
+      print("Creating member with userId: ${member.userId}");
+      print("Member data: ${member.toJson()}");
+    }
     final response = await client.post(
       Uri.parse('$baseUrl/member-service/api/membres'),
       headers: headers,
       body: jsonEncode(member.toJson()),
     );
 
-    print("ADD STATUS: ${response.statusCode}");
-    print("ADD BODY: ${response.body}");
+    if (kDebugMode) {
+      print("ADD STATUS: ${response.statusCode}");
+      print("ADD BODY: ${response.body}");
+    }
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return MemberModel.fromJson(jsonDecode(response.body));
@@ -84,15 +92,16 @@ class MemberRemoteDataSource {
   Future<MemberModel> updateMember(MemberModel member) async {
     final headers = await _getHeaders();
 
-    print("Updating member with userId: ${member}");
     final response = await client.put(
       Uri.parse('$baseUrl/member-service/api/membres/${member.membreId}'),
       headers: headers,
       body: jsonEncode(member.toJson()),
     );
 
-    print("UPDATE STATUS: ${response.statusCode}");
-    print("UPDATE BODY: ${response.body}");
+    if (kDebugMode) {
+      print("UPDATE STATUS: ${response.statusCode}");
+      print("UPDATE BODY: ${response.body}");
+    }
 
     if (response.statusCode == 200) {
       return MemberModel.fromJson(jsonDecode(response.body));

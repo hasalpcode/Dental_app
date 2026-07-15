@@ -4,10 +4,11 @@ import 'package:dental_app/core/features/baptemes/domain/entity/bapteme_entity.d
 import 'package:dental_app/core/features/baptemes/domain/usecases/get_onebaptem.dart';
 import 'package:dental_app/core/features/members/data/data_remote_source.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
+import 'package:dental_app/core/features/members/domain/entity/member.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class BaptismDetailPage extends StatefulWidget {
   final String baptismId;
@@ -29,15 +30,19 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
 
   Future<_BaptismDetailData> _loadDetailData() async {
     final baptismRepo =
-        BaptismRepositoryImpl(BaptismRemoteDataSource(http.Client()));
+        BaptismRepositoryImpl(BaptismRemoteDataSource(ApiClient.instance));
     final getBaptismById = GetBaptismById(baptismRepo);
 
     final memberRepo =
-        MemberRepositoryImpl(MemberRemoteDataSource(http.Client()));
+        MemberRepositoryImpl(MemberRemoteDataSource(ApiClient.instance));
     final getMembers = GetMembers(memberRepo);
 
-    final baptism = await getBaptismById(widget.baptismId);
-    final members = await getMembers();
+    final results = await Future.wait([
+      getBaptismById(widget.baptismId),
+      getMembers(),
+    ]);
+    final baptism = results[0] as Baptism;
+    final members = results[1] as List<Member>;
 
     final memberNames = <int, String>{};
     for (final member in members) {
@@ -123,39 +128,117 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                "Cotisations",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Cotisations",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "${baptism.contributions.length} contributeur"
+                    "${baptism.contributions.length != 1 ? 's' : ''}",
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
-              ...baptism.contributions.map((c) {
-                final memberName =
-                    memberNames[c.membreId] ?? 'Membre #${c.membreId}';
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
+              if (baptism.contributions.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 6)
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.groups_outlined,
+                          size: 40, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      Text('Aucune contribution pour le moment',
+                          style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xff0b5260),
-                      child: Icon(Icons.person, color: Colors.white, size: 18),
-                    ),
-                    title: Text(memberName,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    trailing: Text(
-                      "${c.montant} Fcfa",
-                      style: const TextStyle(
-                          color: Color(0xfff08024),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                );
-              }),
+                )
+              else
+                ...(() {
+                  final total = _total(baptism);
+                  final sorted = [...baptism.contributions]
+                    ..sort((a, b) => b.montant.compareTo(a.montant));
+                  return sorted.map((c) {
+                    final memberName =
+                        memberNames[c.membreId] ?? 'Membre #${c.membreId}';
+                    final initial =
+                        memberName.isNotEmpty ? memberName[0] : '?';
+                    final share = total > 0 ? c.montant / total : 0.0;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 6),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor:
+                                    const Color(0xff0b5260).withOpacity(0.15),
+                                child: Text(
+                                  initial.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Color(0xff0b5260),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(memberName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xfff08024)
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  "${c.montant.toStringAsFixed(0)} Fcfa",
+                                  style: const TextStyle(
+                                    color: Color(0xfff08024),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: share.clamp(0, 1),
+                              minHeight: 6,
+                              backgroundColor: Colors.grey[200],
+                              valueColor: const AlwaysStoppedAnimation(
+                                  Color(0xfff08024)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+                })(),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),

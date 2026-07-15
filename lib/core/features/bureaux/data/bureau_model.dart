@@ -2,7 +2,7 @@ import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart
 
 class BureauModel extends BureauEntity {
   BureauModel({
-    required super.bureauId,
+     super.bureauId,
     required super.name,
     required super.description,
   });
@@ -15,11 +15,18 @@ class BureauModel extends BureauEntity {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'bureauId': bureauId,
-        'name': name,
-        'description': description,
-      };
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'name': name,
+      'description': description,
+    };
+    // Le bureauId n'est envoyé que pour une modification : à la création,
+    // c'est le backend qui l'attribue.
+    if (bureauId != null) {
+      json['bureauId'] = bureauId;
+    }
+    return json;
+  }
 
   factory BureauModel.fromEntity(BureauEntity e) => BureauModel(
         bureauId: e.bureauId,
