@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserStorage {
   static const String _keyUser = 'user';
   static const String _keyToken = 'token';
+  static const String _keySubdomain = 'tenant_subdomain';
 
   static Future<void> saveUser(User user, String token) async {
     final prefs = await SharedPreferences.getInstance();
@@ -53,30 +54,55 @@ class UserStorage {
     return prefs.getString(_keyToken);
   }
 
-  /// Vérifie si un token JWT est encore valide (non expiré)
-  static bool isTokenValid(String token) {
+  static Map<String, dynamic>? _decodeJwtPayload(String token) {
     try {
       final parts = token.split('.');
-      if (parts.length != 3) return false;
-
+      if (parts.length != 3) return null;
       final normalized = base64Url.normalize(parts[1]);
-      final payload =
-          jsonDecode(utf8.decode(base64Url.decode(normalized)));
-
-      final exp = payload['exp'];
-      if (exp == null) return true;
-
-      final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-      return DateTime.now().isBefore(expiry);
+      return jsonDecode(utf8.decode(base64Url.decode(normalized)));
     } catch (_) {
-      return false;
+      return null;
     }
   }
 
-  /// Supprime l'utilisateur (logout)
+  /// Vérifie si un token JWT est encore valide (non expiré)
+  static bool isTokenValid(String token) {
+    final payload = _decodeJwtPayload(token);
+    if (payload == null) return false;
+
+    final exp = payload['exp'];
+    if (exp == null) return true;
+
+    final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    return DateTime.now().isBefore(expiry);
+  }
+
+  /// Tenant courant, lu depuis le claim `tenantId` du JWT stocké (posé par
+  /// le backend au login/signup — pas besoin de le stocker séparément).
+  static Future<String?> getTenantId() async {
+    final token = await getToken();
+    if (token == null) return null;
+    final payload = _decodeJwtPayload(token);
+    return payload?['tenantId'] as String?;
+  }
+
+  /// Supprime l'utilisateur (logout). Le sous-domaine est volontairement
+  /// conservé : c'est l'identité de la caisse, pas de la session.
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyUser);
     await prefs.remove(_keyToken);
+  }
+
+  /// Sous-domaine de la caisse (tenant), saisi une fois sur l'ecran de
+  /// login puis memorise pour les connexions suivantes.
+  static Future<void> saveSubdomain(String subdomain) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keySubdomain, subdomain);
+  }
+
+  static Future<String?> getSubdomain() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keySubdomain);
   }
 }

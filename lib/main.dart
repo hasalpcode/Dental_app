@@ -3,13 +3,16 @@ import 'package:dental_app/core/features/auth/data/remote_data_auth_source.dart'
 import 'package:dental_app/core/features/auth/presentation/login_page.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/auth/usecases/login_user.dart';
+import 'package:dental_app/core/features/auth/usecases/signup_user.dart';
 import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/usecases/main_screen.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
-// POUR LA CONNEXION NGROK
+/// Ignore les certificats invalides — utile en dev contre un backend en
+/// HTTPS auto-signé (ngrok, etc). Jamais active en release.
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -20,18 +23,22 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 void main() {
-  // runApp(MyApp());
-  HttpOverrides.global = MyHttpOverrides();
+  if (kDebugMode) {
+    HttpOverrides.global = MyHttpOverrides();
+  }
+
+  final authRepository = AuthRepositoryImpl(
+    AuthRemoteDataSource(ApiClient.instance),
+  );
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
-            LoginUser(
-              AuthRepositoryImpl(
-                AuthRemoteDataSource(ApiClient.instance),
-              ),
-            ),
+            authRepository,
+            LoginUser(authRepository),
+            SignupUser(authRepository),
           ),
         ),
       ],

@@ -48,8 +48,8 @@ class ProfileWidget extends StatelessWidget {
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.email),
-                title: const Text('Email'),
+                leading: const Icon(Icons.phone),
+                title: const Text('N°telephone'),
                 subtitle: Text(email.isNotEmpty ? email : 'Non renseigné'),
               ),
               if (password != null) ...[

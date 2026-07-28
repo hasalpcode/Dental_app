@@ -12,10 +12,10 @@ import 'package:dental_app/core/features/retrait/presentation/widgets/add_retrai
 import 'package:dental_app/core/features/retrait/presentation/widgets/retrait_list.dart';
 import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
 import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:http/http.dart' as http;
 
 class RetraitPage extends StatefulWidget {
   const RetraitPage({super.key});
@@ -44,7 +44,7 @@ class _RetraitPageState extends State<RetraitPage> {
   void initState() {
     super.initState();
 
-    final client = http.Client();
+    final client = ApiClient.instance;
 
     retraitRepository = RetraitRepositoryImpl(
       RetraitRemoteDataSource(client),

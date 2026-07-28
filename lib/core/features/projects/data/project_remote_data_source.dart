@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dental_app/core/features/projects/data/project_model.dart';
-import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:http/http.dart' as http;
 
 class ProjectImage {
   final String id;
@@ -13,27 +12,13 @@ class ProjectImage {
 }
 
 class ProjectRemoteDataSource {
-  final http.Client client;
-  final String baseUrl = 'https://service-gatway-production.up.railway.app';
+  final ApiClient client;
 
   ProjectRemoteDataSource(this.client);
 
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await UserStorage.getToken();
-    if (token == null) throw Exception('Utilisateur non connecté');
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
   // for projects
   Future<List<ProjectModel>> getProjects() async {
-    final headers = await _getHeaders();
-    final response = await client.get(
-        Uri.parse('$baseUrl/member-service/api/projects'),
-        headers: headers);
+    final response = await client.get('/member-service/api/projects');
     if (response.statusCode == 200) {
       if (kDebugMode) print("PROJECTS RESPONSE: ${response.body}");
       List jsonResponse = json.decode(response.body);
@@ -46,12 +31,9 @@ class ProjectRemoteDataSource {
   }
 
   Future<ProjectModel> addProject(ProjectModel project) async {
-    final headers = await _getHeaders();
-
     final response = await client.post(
-      Uri.parse('$baseUrl/member-service/api/projects'),
-      headers: headers,
-      body: json.encode(project.toJson()),
+      '/member-service/api/projects',
+      body: project.toJson(),
     );
     if (response.statusCode == 201) {
       return ProjectModel.fromJson(json.decode(response.body));
@@ -61,11 +43,9 @@ class ProjectRemoteDataSource {
   }
 
   Future<ProjectModel> updateProject(ProjectModel project) async {
-    final headers = await _getHeaders();
     final response = await client.put(
-      Uri.parse('$baseUrl/member-service/api/projects/${project.projectId}'),
-      headers: headers,
-      body: json.encode(project.toJson()),
+      '/member-service/api/projects/${project.projectId}',
+      body: project.toJson(),
     );
 
     if (kDebugMode) {
@@ -79,21 +59,15 @@ class ProjectRemoteDataSource {
   }
 
   Future<void> deleteProject(int id) async {
-    final headers = await _getHeaders();
-    final response = await client.delete(
-        Uri.parse('$baseUrl/member-service/api/projects/$id'),
-        headers: headers);
+    final response = await client.delete('/member-service/api/projects/$id');
     if (response.statusCode != 204) {
       throw Exception('Failed to delete project');
     }
   }
 
   Future<List<ProjectImage>> getProjectImages(int projectId) async {
-    final headers = await _getHeaders();
-    final response = await client.get(
-      Uri.parse('$baseUrl/member-service/api/imgprojects/$projectId/images'),
-      headers: headers,
-    );
+    final response =
+        await client.get('/member-service/api/imgprojects/$projectId/images');
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data is List) {
@@ -122,17 +96,11 @@ class ProjectRemoteDataSource {
   }
 
   Future<void> uploadProjectImage(int projectId, File image) async {
-    final token = await UserStorage.getToken();
-    if (token == null) throw Exception('Utilisateur non connecté');
-
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/member-service/api/imgprojects/$projectId/images'),
-    )..headers['Authorization'] = 'Bearer $token';
-
-    request.files.add(await http.MultipartFile.fromPath('file', image.path));
-
-    final streamed = await client.send(request);
+    final streamed = await client.multipartUpload(
+      '/member-service/api/imgprojects/$projectId/images',
+      file: image,
+      fileField: 'file',
+    );
     if (streamed.statusCode != 200 && streamed.statusCode != 201) {
       final body = await streamed.stream.bytesToString();
       throw Exception('Erreur upload image: ${streamed.statusCode} - $body');
@@ -140,11 +108,8 @@ class ProjectRemoteDataSource {
   }
 
   Future<void> deleteProjectImage(int projectId, String imageId) async {
-    final headers = await _getHeaders();
     final response = await client.delete(
-      Uri.parse(
-          '$baseUrl/member-service/api/imgprojects/$projectId/images/$imageId'),
-      headers: headers,
+      '/member-service/api/imgprojects/$projectId/images/$imageId',
     );
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception(

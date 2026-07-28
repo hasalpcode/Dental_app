@@ -1,3 +1,4 @@
+import 'package:dental_app/core/features/auth/data/remote_data_auth_source.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
@@ -9,6 +10,9 @@ import 'package:dental_app/core/features/members/domain/usecases/update_member.d
 import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+/// role_id 1 = USER, role_id 3 = COMPTABLE (table role)
+int _roleIdForRole(String role) => role.toUpperCase() == 'COMPTABLE' ? 3 : 1;
 
 class BureauDetailPage extends StatefulWidget {
   final BureauEntity bureau;
@@ -26,6 +30,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
   late final MemberRepositoryImpl repository;
   late final GetMembers getMembers;
   late final UpdateMember updateMember;
+  late final AuthRemoteDataSource authDataSource;
   List<Member> allMembers = [];
   List<Member> bureauMembers = [];
   bool isLoading = true;
@@ -37,6 +42,7 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
     repository = MemberRepositoryImpl(dataSource);
     getMembers = GetMembers(repository);
     updateMember = UpdateMember(repository);
+    authDataSource = AuthRemoteDataSource(ApiClient.instance);
     _loadMembers();
   }
 
@@ -86,20 +92,13 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
         bureauMembers: bureauMembers,
         onMemberSelected: (member) async {
           try {
-            final updatedMember = Member(
-              membreId: member.membreId,
-              userId: member.userId,
-              username: member.username,
-              tel: member.tel,
-              addresse: member.addresse,
-              bureauId: widget.bureau.bureauId,
-              posteId: null,
-              dateAdhesion: member.dateAdhesion,
-              carteMembre: member.carteMembre,
-            );
-            print(
-                "Adding member to bureau with userId: ${updatedMember.bureauId}, posteId: ${updatedMember.posteId}");
-            await updateMember(updatedMember);
+            // `member` porte déjà le bureauId et le rôle choisis dans la
+            // modale : on ne le reconstruit pas pour ne pas perdre ce choix.
+            await updateMember(member);
+            if (member.userId != null && member.role != null) {
+              await authDataSource.updateUserRole(
+                  member.userId!, _roleIdForRole(member.role!));
+            }
             await _loadMembers();
             if (mounted) Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -413,13 +412,7 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
   late TextEditingController _searchController;
   String _searchQuery = '';
 
-  final List<String> _posteOptions = [
-    'Président',
-    'Vice-président',
-    'Secrétaire',
-    'Trésorier',
-    'Membre',
-  ];
+  final List<String> _roleOptions = ['USER', 'COMPTABLE'];
 
   @override
   void initState() {
@@ -435,8 +428,9 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
 
   List<Member> get _availableMembers {
     final bureauMemberIds = widget.bureauMembers.map((m) => m.membreId).toSet();
-    final available =
-        widget.allMembers.where((m) => !bureauMemberIds.contains(m.membreId));
+    final available = widget.allMembers.where((m) =>
+        !bureauMemberIds.contains(m.membreId) &&
+        m.role?.toUpperCase() != 'ADMIN');
 
     if (_searchQuery.isEmpty) {
       return available.toList();
@@ -450,29 +444,29 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
         .toList();
   }
 
-  Future<void> _choosePostAndSubmit(Member member) async {
+  Future<void> _chooseRoleAndSubmit(Member member) async {
     final updatedMember = await showDialog<Member>(
       context: context,
       builder: (context) {
-        String? selectedPoste;
+        String? selectedRole;
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Choisir un poste'),
+              title: const Text('Choisir un rôle'),
               content: DropdownButtonFormField<String>(
-                value: selectedPoste,
-                hint: const Text('Sélectionner un poste'),
-                items: _posteOptions
-                    .map((poste) => DropdownMenuItem(
-                          value: poste,
-                          child: Text(poste),
+                value: selectedRole,
+                hint: const Text('Sélectionner un rôle'),
+                items: _roleOptions
+                    .map((role) => DropdownMenuItem(
+                          value: role,
+                          child: Text(role),
                         ))
                     .toList(),
                 onChanged: (value) => setStateDialog(() {
-                  selectedPoste = value;
+                  selectedRole = value;
                 }),
                 decoration: const InputDecoration(
-                  labelText: 'Poste',
+                  labelText: 'Rôle',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -482,7 +476,7 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                   child: const Text('Annuler'),
                 ),
                 ElevatedButton(
-                  onPressed: selectedPoste == null
+                  onPressed: selectedRole == null
                       ? null
                       : () {
                           final result = Member(
@@ -492,9 +486,11 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                             tel: member.tel,
                             addresse: member.addresse,
                             bureauId: widget.bureauId,
-                            posteId: selectedPoste,
+                            posteId: member.posteId,
                             dateAdhesion: member.dateAdhesion,
                             carteMembre: member.carteMembre,
+                            roleId: member.roleId,
+                            role: selectedRole,
                           );
                           Navigator.pop(context, result);
                         },
@@ -618,7 +614,7 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                       subtitle: Text(member.tel),
                       trailing: const Icon(Icons.add_circle_outline,
                           color: Color(0xff0b5260)),
-                      onTap: () => _choosePostAndSubmit(member),
+                      onTap: () => _chooseRoleAndSubmit(member),
                     );
                   },
                 ),

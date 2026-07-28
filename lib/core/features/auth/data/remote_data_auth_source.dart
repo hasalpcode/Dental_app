@@ -1,73 +1,96 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:dental_app/core/features/auth/data/tenant_option_model.dart';
 import 'package:dental_app/core/features/auth/data/user_model.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:http/http.dart' as http;
+import 'package:dental_app/core/helpers/api_client.dart';
+import 'package:dental_app/core/helpers/user_storage.dart';
 
 class AuthRemoteDataSource {
-  final http.Client client;
+  final ApiClient client;
 
   AuthRemoteDataSource(this.client);
 
-  // juste pour le ngrok, à remplacer par la methode ci-dessous
-  Future<UserModel> login(String email, String password) async {
-    final client = HttpClient();
-    // client.badCertificateCallback =
-    //     (X509Certificate cert, String host, int port) => true;
+  /// Change le rôle d'un membre au sein du tenant courant (Membership.role
+  /// — celui qui détermine réellement les droits, pas le rôle global
+  /// historique de la table user).
+  Future<void> updateUserRole(int userId, int roleId) async {
+    final tenantId = await UserStorage.getTenantId();
+    if (tenantId == null) throw Exception('Tenant introuvable');
 
-    try {
-      final request = await client
-          .postUrl(Uri.parse(
-              'https://service-gatway-production.up.railway.app/user-service/auth/login'))
-          .timeout(const Duration(seconds: 10));
+    final response = await client.patch(
+      '/user-service/memberships/tenant/$tenantId/user/$userId/role/$roleId',
+    );
 
-      request.headers.set(HttpHeaders.contentTypeHeader, "application/json");
-      request.add(utf8.encode(jsonEncode({
-        "email": email,
-        "password": password,
-      })));
-
-      final response = await request.close();
-
-      final responseBody = await response.transform(utf8.decoder).join();
-      if (kDebugMode) {
-        print('Status code: ${response.statusCode}');
-        print('Body: $responseBody');
-      }
-
-      if (response.statusCode == 200) {
-        return UserModel.fromJson(jsonDecode(responseBody));
-      } else {
-        throw Exception(
-            "Login failed: ${response.statusCode} - ${responseBody}");
-      }
-    } catch (e) {
-      if (kDebugMode) print('Error: $e');
-      rethrow;
-    } finally {
-      client.close();
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception(
+          'Erreur modification rôle: ${response.statusCode} - ${response.body}');
     }
   }
 
-  // Future<UserModel> login(String email, String password) async {
-  //   final response = await client.post(
-  //     Uri.parse(
-  //         'https://52a5-46-193-66-177.ngrok.free.app/user-service/auth/login'),
-  //     body: jsonEncode({
-  //       "email": email,
-  //       "password": password,
-  //     }),
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //   );
-  //   print(response.statusCode);
+  /// Retrouve les caisses accessibles à ce numéro, avant toute connexion —
+  /// permet de résoudre le sous-domaine sans le demander à l'utilisateur.
+  Future<List<TenantOption>> resolveTenants(String email) async {
+    final response = await client.post(
+      '/user-service/auth/resolve-tenant',
+      auth: false,
+      body: {'email': email},
+    );
 
-  //   if (response.statusCode == 200) {
-  //     return UserModel.fromJson(jsonDecode(response.body));
-  //   } else {
-  //     print("Login failed: ${response.statusCode} - ${response.body}");
-  //     throw Exception("Login failed");
-  //   }
-  // }
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => TenantOption.fromJson(e)).toList();
+    } else {
+      throw Exception(
+          'Erreur résolution caisse: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  Future<UserModel> login(String email, String password) async {
+    final response = await client.post(
+      '/user-service/auth/login',
+      auth: false,
+      body: {
+        'email': email,
+        'password': password,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return UserModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception(
+          'Login failed: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// Crée une nouvelle caisse (tenant) + son administrateur, et connecte
+  /// immédiatement ce dernier — voir POST /auth/signup côté user-service.
+  Future<UserModel> signup({
+    required String tenantName,
+    required String subdomain,
+    required String planId,
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    final response = await client.post(
+      '/user-service/auth/signup',
+      auth: false,
+      body: {
+        'tenantName': tenantName,
+        'subdomain': subdomain,
+        'planId': planId,
+        'username': username,
+        'email': email,
+        'password': password,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return UserModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception(
+          'Signup failed: ${response.statusCode} - ${response.body}');
+    }
+  }
 }

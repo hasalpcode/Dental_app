@@ -1,31 +1,15 @@
 import 'dart:convert';
 
 import 'package:dental_app/core/features/payments/data/payment_model.dart';
-import 'package:dental_app/core/helpers/user_storage.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:http/http.dart' as http;
 
 class PaymentRemoteDataSource {
-  final http.Client client;
+  final ApiClient client;
   PaymentRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://service-gatway-production.up.railway.app';
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await UserStorage.getToken();
-    if (token == null) throw Exception('Utilisateur non connecté');
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
   Future<List<PaymentModel>> getPayments() async {
-    final headers = await _getHeaders();
-    final response = await client.get(
-      Uri.parse('$baseUrl/finance-service/api/versements'),
-      headers: headers,
-    );
+    final response = await client.get('/finance-service/api/versements');
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
       if (kDebugMode) print("PAYMENTS RESPONSE: ${response.body}");
@@ -38,9 +22,8 @@ class PaymentRemoteDataSource {
   Future<void> addPayment(PaymentModel payment) async {
     if (kDebugMode) print("Adding payment: ${payment.toJson()}");
     final response = await client.post(
-      Uri.parse('$baseUrl/finance-service/api/versements'),
-      headers: await _getHeaders(),
-      body: jsonEncode(payment.toJson()),
+      '/finance-service/api/versements',
+      body: payment.toJson(),
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -54,9 +37,8 @@ class PaymentRemoteDataSource {
 
   Future<void> updatePayment(PaymentModel payment) async {
     final response = await client.put(
-      Uri.parse('$baseUrl/finance-service/api/versements/${payment.id}'),
-      headers: await _getHeaders(),
-      body: jsonEncode(payment.toJson()),
+      '/finance-service/api/versements/${payment.id}',
+      body: payment.toJson(),
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
@@ -66,9 +48,6 @@ class PaymentRemoteDataSource {
   }
 
   Future<void> deletePayment(String id) async {
-    await client.delete(
-      Uri.parse('$baseUrl/finance-service/api/versements/$id'),
-      headers: await _getHeaders(),
-    );
+    await client.delete('/finance-service/api/versements/$id');
   }
 }

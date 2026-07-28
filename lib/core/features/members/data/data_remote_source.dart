@@ -1,33 +1,20 @@
 import 'dart:convert';
 import 'package:dental_app/core/features/members/data/member_model.dart';
+import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:http/http.dart' as http;
+
+/// role_id 1 = USER (table role) — rôle par défaut d'un membre nouvellement
+/// ajouté ; promu ensuite via AuthRemoteDataSource.updateUserRole si besoin.
+const int _defaultMemberRoleId = 1;
 
 class MemberRemoteDataSource {
-  final http.Client client;
+  final ApiClient client;
 
   MemberRemoteDataSource(this.client);
 
-  final String baseUrl = 'https://service-gatway-production.up.railway.app';
-
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await UserStorage.getToken();
-    if (token == null) throw Exception('Utilisateur non connecté');
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
   Future<List<MemberModel>> getMembers() async {
-    final headers = await _getHeaders();
-
-    final response = await client.get(
-      Uri.parse('$baseUrl/member-service/api/membres'),
-      headers: headers,
-    );
+    final response = await client.get('/member-service/api/membres');
 
     if (kDebugMode) {
       print("STATUS: ${response.statusCode}");
@@ -43,17 +30,14 @@ class MemberRemoteDataSource {
   }
 
   Future<MemberModel> addMember(MemberModel member) async {
-    final headers = await _getHeaders();
-
     final addUserMember = await client.post(
-      Uri.parse('$baseUrl/user-service/auth/register'),
-      headers: headers,
-      body: jsonEncode({
+      '/user-service/auth/register',
+      body: {
         "username": member.username,
         "email": member.tel,
         "password": "1234",
         "role": "USER",
-      }),
+      },
     );
     if (kDebugMode) {
       print("ADD USER BODY: ${addUserMember.body}");
@@ -66,14 +50,32 @@ class MemberRemoteDataSource {
       member.userId = jsonDecode(addUserMember.body)['userId'];
     }
 
+    // Sans Membership, ce User ne pourrait jamais se connecter au tenant
+    // courant (rejeté "aucun accès à ce tenant" au login).
+    final tenantId = await UserStorage.getTenantId();
+    if (tenantId == null) throw Exception('Tenant introuvable');
+
+    final membershipResponse = await client.post(
+      '/user-service/memberships',
+      body: {
+        "tenantId": tenantId,
+        "userId": member.userId,
+        "roleId": _defaultMemberRoleId,
+      },
+    );
+    if (membershipResponse.statusCode != 200 &&
+        membershipResponse.statusCode != 201) {
+      throw Exception(
+          'Erreur création accès pour membre: ${membershipResponse.statusCode} - ${membershipResponse.body}');
+    }
+
     if (kDebugMode) {
       print("Creating member with userId: ${member.userId}");
       print("Member data: ${member.toJson()}");
     }
     final response = await client.post(
-      Uri.parse('$baseUrl/member-service/api/membres'),
-      headers: headers,
-      body: jsonEncode(member.toJson()),
+      '/member-service/api/membres',
+      body: member.toJson(),
     );
 
     if (kDebugMode) {
@@ -90,12 +92,9 @@ class MemberRemoteDataSource {
   }
 
   Future<MemberModel> updateMember(MemberModel member) async {
-    final headers = await _getHeaders();
-
     final response = await client.put(
-      Uri.parse('$baseUrl/member-service/api/membres/${member.membreId}'),
-      headers: headers,
-      body: jsonEncode(member.toJson()),
+      '/member-service/api/membres/${member.membreId}',
+      body: member.toJson(),
     );
 
     if (kDebugMode) {
@@ -111,11 +110,7 @@ class MemberRemoteDataSource {
   }
 
   Future<void> deleteMember(int id) async {
-    final headers = await _getHeaders();
-    final response = await client.delete(
-      Uri.parse('$baseUrl/member-service/api/membres/$id'),
-      headers: headers,
-    );
+    final response = await client.delete('/member-service/api/membres/$id');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Erreur suppression membre: ${response.statusCode}');

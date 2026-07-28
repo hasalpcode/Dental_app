@@ -1,32 +1,15 @@
 import 'dart:convert';
 
 import 'package:dental_app/core/features/baptemes/data/baptem_model.dart';
-import 'package:dental_app/core/helpers/user_storage.dart';
-import 'package:http/http.dart' as http;
+import 'package:dental_app/core/helpers/api_client.dart';
 
 class BaptismRemoteDataSource {
-  final http.Client client;
-  final String baseUrl =
-      'https://service-gatway-production.up.railway.app/finance-service';
+  final ApiClient client;
 
   BaptismRemoteDataSource(this.client);
 
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await UserStorage.getToken();
-    if (token == null) throw Exception('Utilisateur non connecté');
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
   Future<List<BaptismModel>> getBaptisms() async {
-    final headers = await _getHeaders();
-    final response = await client.get(
-      Uri.parse('$baseUrl/api/births'),
-      headers: headers,
-    );
+    final response = await client.get('/finance-service/api/births');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -39,11 +22,7 @@ class BaptismRemoteDataSource {
   }
 
   Future<BaptismModel> getBaptismById(String id) async {
-    final headers = await _getHeaders();
-    final response = await client.get(
-      Uri.parse('$baseUrl/api/births/$id'),
-      headers: headers,
-    );
+    final response = await client.get('/finance-service/api/births/$id');
 
     if (response.statusCode == 200) {
       return BaptismModel.fromJson(jsonDecode(response.body));
@@ -53,11 +32,9 @@ class BaptismRemoteDataSource {
   }
 
   Future<BaptismModel> addBaptism(BaptismModel baptism) async {
-    final headers = await _getHeaders();
     final response = await client.post(
-      Uri.parse('$baseUrl/api/births'),
-      headers: headers,
-      body: jsonEncode(baptism.toJson()),
+      '/finance-service/api/births',
+      body: baptism.toJson(),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -68,11 +45,9 @@ class BaptismRemoteDataSource {
   }
 
   Future<BaptismModel> updateBaptism(BaptismModel baptism) async {
-    final headers = await _getHeaders();
     final response = await client.put(
-      Uri.parse('$baseUrl/api/births/${baptism.id}'),
-      headers: headers,
-      body: jsonEncode(baptism.toJson()),
+      '/finance-service/api/births/${baptism.id}',
+      body: baptism.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -83,11 +58,7 @@ class BaptismRemoteDataSource {
   }
 
   Future<void> deleteBaptism(String id) async {
-    final headers = await _getHeaders();
-    final response = await client.delete(
-      Uri.parse('$baseUrl/api/births/$id'),
-      headers: headers,
-    );
+    final response = await client.delete('/finance-service/api/births/$id');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Erreur suppression baptême: ${response.statusCode}');

@@ -1,8 +1,10 @@
+import 'package:dental_app/core/features/auth/data/tenant_option_model.dart';
 import 'package:dental_app/core/usecases/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,6 +38,46 @@ class _LoginPageState extends State<LoginPage>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
+  }
+
+  /// Ce numéro a accès à plusieurs caisses : demande laquelle utiliser
+  /// avant de terminer la connexion.
+  Future<void> _pickTenant(BuildContext context, AuthProvider provider) async {
+    final choices = provider.tenantChoices!;
+    final chosen = await showModalBottomSheet<TenantOption>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                "Choisissez votre caisse",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            for (final option in choices)
+              ListTile(
+                leading: const Icon(Icons.domain_outlined),
+                title: Text(option.tenantName),
+                subtitle: Text(option.subdomain),
+                onTap: () => Navigator.pop(context, option),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (chosen == null || !context.mounted) return;
+
+    final success = await provider.loginWithChosenTenant(chosen);
+    if (success && context.mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    }
   }
 
   @override
@@ -186,15 +228,20 @@ class _LoginPageState extends State<LoginPage>
                                         emailController.text,
                                         passwordController.text,
                                       );
-                                      print("Login success: $success");
 
-                                      if (success) {
+                                      if (success && context.mounted) {
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) => const MainScreen(),
                                           ),
                                         );
+                                        return;
+                                      }
+
+                                      if (context.mounted &&
+                                          provider.tenantChoices != null) {
+                                        await _pickTenant(context, provider);
                                       }
                                     },
                               child: AnimatedContainer(
@@ -248,6 +295,20 @@ class _LoginPageState extends State<LoginPage>
                             onPressed: () {},
                             child: const Text(
                               "Mot de passe oublié ?",
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SignupPage(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              "Créer une nouvelle caisse",
                               style: TextStyle(color: Colors.black54),
                             ),
                           ),
