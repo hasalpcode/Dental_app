@@ -65,6 +65,7 @@ class RetraitCubit extends Cubit<RetraitState> {
     try {
       await deleteRetraitUseCase(id);
       await loadData();
+      emit(state.copyWith(isDeleting: false));
     } catch (e) {
       emit(state.copyWith(isDeleting: false, error: e.toString()));
     }

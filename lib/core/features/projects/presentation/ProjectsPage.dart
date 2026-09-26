@@ -1,5 +1,6 @@
 import 'package:dental_app/core/features/bureaux/data/bureau_remote_data_source.dart';
 import 'package:dental_app/core/features/bureaux/data/bureau_repository_impl.dart';
+import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart';
 import 'package:dental_app/core/features/bureaux/domain/usecases/get_bureaux.dart';
 import 'package:dental_app/core/features/projects/data/project_remote_data_source.dart';
 import 'package:dental_app/core/features/projects/data/project_repository_impl.dart';
@@ -36,7 +37,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
   late final ProjectsCubit projectsCubit;
   late final GetBureaux getBureauxUseCase;
 
-  List<int> _bureauIds = [];
+  List<BureauEntity> _bureaux = [];
 
   @override
   void initState() {
@@ -67,12 +68,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
   Future<void> _loadBureaux() async {
     try {
       final bureaux = await getBureauxUseCase();
-      if (mounted) {
-        setState(() => _bureauIds =
-            bureaux.map((b) => b.bureauId).whereType<int>().toList());
-      }
-    } catch (_) {
-      // Le formulaire fonctionne toujours sans bureau pré-rempli
+      if (mounted) setState(() => _bureaux = bureaux);
+    } catch (e) {
+      debugPrint('Erreur chargement bureaux: $e');
     }
   }
 
@@ -92,7 +90,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
-        bureaus: _bureauIds,
+        bureaus: _bureaux,
         onSubmit: (p) => projectsCubit.addProject(p),
       ),
     );
@@ -105,7 +103,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => AddProjectModal(
         project: project,
-        bureaus: _bureauIds,
+        bureaus: _bureaux,
         onSubmit: (p) => projectsCubit.updateProject(p),
       ),
     );

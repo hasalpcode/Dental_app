@@ -1,26 +1,11 @@
 import 'package:dental_app/core/helpers/date_helpers.dart';
-import 'package:dental_app/core/helpers/api_client.dart';
-import 'package:dental_app/core/features/members/data/data_remote_source.dart';
-import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
-import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
-import 'package:dental_app/core/features/payments/data/payment_remote_data_source.dart';
-import 'package:dental_app/core/features/payments/data/payment_repository_impl.dart';
+import 'package:dental_app/core/features/members/presentation/bloc/members_cubit.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
-import 'package:dental_app/core/features/payments/domain/usecases/add_payment.dart';
-import 'package:dental_app/core/features/payments/domain/usecases/delete_payment.dart';
-import 'package:dental_app/core/features/payments/domain/usecases/get_payments.dart';
-import 'package:dental_app/core/features/payments/domain/usecases/update_payment.dart';
 import 'package:dental_app/core/features/payments/presentation/bloc/payments_cubit.dart';
 import 'package:dental_app/core/features/payments/presentation/bloc/payments_state.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/add_payment_modal.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/payment_list.dart';
-import 'package:dental_app/core/features/retrait/data/retrait_remote_data_source.dart';
-import 'package:dental_app/core/features/retrait/data/retrait_repository_impl.dart';
 import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
-import 'package:dental_app/core/features/retrait/domain/usecases/add_retrait.dart';
-import 'package:dental_app/core/features/retrait/domain/usecases/delete_retrait.dart';
-import 'package:dental_app/core/features/retrait/domain/usecases/get_retraits.dart';
-import 'package:dental_app/core/features/retrait/domain/usecases/update_retrait.dart';
 import 'package:dental_app/core/features/retrait/presentation/bloc/retrait_cubit.dart';
 import 'package:dental_app/core/features/retrait/presentation/bloc/retrait_state.dart';
 import 'package:dental_app/core/features/retrait/presentation/widgets/add_retrait_modal.dart';
@@ -39,13 +24,9 @@ class PaymentsPage extends StatefulWidget {
 }
 
 class _PaymentsPageState extends State<PaymentsPage> {
-  // --- Versements ---
   late final PaymentsCubit paymentsCubit;
-
-  // --- Retraits ---
   late final RetraitCubit retraitCubit;
 
-  // --- UI state ---
   bool _showVersements = true;
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
@@ -60,54 +41,32 @@ class _PaymentsPageState extends State<PaymentsPage> {
     searchController = TextEditingController()
       ..addListener(() => setState(() => searchQuery = searchController.text));
 
-    final client = ApiClient.instance;
-    final memberRepo = MemberRepositoryImpl(MemberRemoteDataSource(client));
-    final getMembers = GetMembers(memberRepo);
+    paymentsCubit = context.read<PaymentsCubit>();
+    retraitCubit = context.read<RetraitCubit>();
 
-    final paymentRepo = PaymentRepositoryImpl(PaymentRemoteDataSource(client));
-    paymentsCubit = PaymentsCubit(
-      GetPayments(paymentRepo),
-      getMembers,
-      AddPayment(paymentRepo),
-      UpdatePayment(paymentRepo),
-      DeletePayment(paymentRepo),
-    );
-
-    final retraitRepo = RetraitRepositoryImpl(RetraitRemoteDataSource(client));
-    retraitCubit = RetraitCubit(
-      GetRetraits(retraitRepo),
-      getMembers,
-      AddRetrait(retraitRepo),
-      UpdateRetrait(retraitRepo),
-      DeleteRetrait(retraitRepo),
-    );
-
-    _loadInitialData(getMembers);
-  }
-
-  /// Charge la liste des membres une seule fois et la partage entre les
-  /// deux cubits, au lieu de la récupérer deux fois en double au chargement
-  /// de la page (une fois pour les versements, une fois pour les retraits).
-  Future<void> _loadInitialData(GetMembers getMembers) async {
-    try {
-      final members = await getMembers();
-      await Future.wait([
-        paymentsCubit.loadData(members: members),
-        retraitCubit.loadData(members: members),
-      ]);
-    } catch (_) {
-      await Future.wait([
-        paymentsCubit.loadData(),
-        retraitCubit.loadData(),
-      ]);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final needsLoad = paymentsCubit.state.payments.isEmpty ||
+          retraitCubit.state.retraits.isEmpty;
+      if (!needsLoad) return;
+      final members = context.read<MembersCubit>().state.members;
+      if (members.isNotEmpty) {
+        Future.wait([
+          paymentsCubit.loadData(members: members),
+          retraitCubit.loadData(members: members),
+        ]);
+      } else {
+        Future.wait([
+          paymentsCubit.loadData(),
+          retraitCubit.loadData(),
+        ]);
+      }
+    });
   }
 
   @override
   void dispose() {
     searchController.dispose();
-    paymentsCubit.close();
-    retraitCubit.close();
     super.dispose();
   }
 
@@ -310,112 +269,106 @@ class _PaymentsPageState extends State<PaymentsPage> {
     final canManageVersements = auth.isComptable;
     final canManageRetraits = auth.isComptable;
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: paymentsCubit),
-        BlocProvider.value(value: retraitCubit),
-      ],
-      child: Scaffold(
-        appBar: const CurvedAppBar(title: 'Finance'),
-        floatingActionButton:
-            (_showVersements ? canManageVersements : canManageRetraits)
-                ? FloatingActionButton(
-                    onPressed: _showVersements
-                        ? _openAddPaymentModal
-                        : _openAddRetraitModal,
-                    backgroundColor: const Color(0xff0b5260),
-                    child: const Icon(Icons.add, color: Colors.white),
+    return Scaffold(
+      appBar: const CurvedAppBar(title: 'Finance'),
+      floatingActionButton:
+          (_showVersements ? canManageVersements : canManageRetraits)
+              ? FloatingActionButton(
+                  onPressed: _showVersements
+                      ? _openAddPaymentModal
+                      : _openAddRetraitModal,
+                  backgroundColor: const Color(0xff0b5260),
+                  child: const Icon(Icons.add, color: Colors.white),
+                )
+              : null,
+      body: Column(
+        children: [
+          _buildToggle(),
+          _buildFilters(),
+          _buildSearchBar(),
+          Expanded(
+            child: _showVersements
+                ? BlocBuilder<PaymentsCubit, PaymentsState>(
+                    builder: (context, state) {
+                      if (state.isLoading) {
+                        return const Center(
+                            child: CircularProgressIndicator());
+                      }
+                      return Stack(
+                        children: [
+                          RefreshIndicator(
+                            onRefresh: paymentsCubit.loadData,
+                            child: PaymentsList(
+                              payments: _filteredPayments,
+                              memberMap: state.memberMap,
+                              searchQuery: searchQuery,
+                              onEdit: canManageVersements
+                                  ? _openEditPaymentModal
+                                  : null,
+                              onDelete: canManageVersements
+                                  ? (id) async {
+                                      final confirmed = await _confirmDelete(
+                                          context, 'ce versement');
+                                      if (confirmed) {
+                                        await context
+                                            .read<PaymentsCubit>()
+                                            .deletePayment(id);
+                                      }
+                                    }
+                                  : null,
+                            ),
+                          ),
+                          if (state.isDeleting)
+                            Container(
+                              color: Colors.black26,
+                              child: const Center(
+                                  child: CircularProgressIndicator()),
+                            ),
+                        ],
+                      );
+                    },
                   )
-                : null,
-        body: Column(
-          children: [
-            _buildToggle(),
-            _buildFilters(),
-            _buildSearchBar(),
-            Expanded(
-              child: _showVersements
-                  ? BlocBuilder<PaymentsCubit, PaymentsState>(
-                      builder: (context, state) {
-                        if (state.isLoading) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        return Stack(
-                          children: [
-                            RefreshIndicator(
-                              onRefresh: paymentsCubit.loadData,
-                              child: PaymentsList(
-                                payments: _filteredPayments,
-                                memberMap: state.memberMap,
-                                searchQuery: searchQuery,
-                                onEdit: canManageVersements
-                                    ? _openEditPaymentModal
-                                    : null,
-                                onDelete: canManageVersements
-                                    ? (id) async {
-                                        final confirmed = await _confirmDelete(
-                                            context, 'ce versement');
-                                        if (confirmed) {
-                                          await context
-                                              .read<PaymentsCubit>()
-                                              .deletePayment(id);
-                                        }
+                : BlocBuilder<RetraitCubit, RetraitState>(
+                    builder: (context, state) {
+                      if (state.isLoading) {
+                        return const Center(
+                            child: CircularProgressIndicator());
+                      }
+                      return Stack(
+                        children: [
+                          RefreshIndicator(
+                            onRefresh: retraitCubit.loadData,
+                            child: RetraitList(
+                              retraits: _filteredRetraits,
+                              memberMap: state.memberMap,
+                              onEdit: canManageRetraits
+                                  ? _openEditRetraitModal
+                                  : null,
+                              onDelete: canManageRetraits
+                                  ? (id) async {
+                                      final confirmed = await _confirmDelete(
+                                          context, 'ce retrait');
+                                      if (confirmed) {
+                                        await context
+                                            .read<RetraitCubit>()
+                                            .deleteRetrait(id);
                                       }
-                                    : null,
-                              ),
+                                    }
+                                  : null,
                             ),
-                            if (state.isDeleting)
-                              Container(
-                                color: Colors.black26,
-                                child: const Center(
-                                    child: CircularProgressIndicator()),
-                              ),
-                          ],
-                        );
-                      },
-                    )
-                  : BlocBuilder<RetraitCubit, RetraitState>(
-                      builder: (context, state) {
-                        if (state.isLoading) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        return Stack(
-                          children: [
-                            RefreshIndicator(
-                              onRefresh: retraitCubit.loadData,
-                              child: RetraitList(
-                                retraits: _filteredRetraits,
-                                memberMap: state.memberMap,
-                                onEdit: canManageRetraits
-                                    ? _openEditRetraitModal
-                                    : null,
-                                onDelete: canManageRetraits
-                                    ? (id) async {
-                                        final confirmed = await _confirmDelete(
-                                            context, 'ce retrait');
-                                        if (confirmed) {
-                                          await context
-                                              .read<RetraitCubit>()
-                                              .deleteRetrait(id);
-                                        }
-                                      }
-                                    : null,
-                              ),
+                          ),
+                          if (state.isDeleting)
+                            Container(
+                              color: Colors.black26,
+                              child: const Center(
+                                  child: CircularProgressIndicator()),
                             ),
-                            if (state.isDeleting)
-                              Container(
-                                color: Colors.black26,
-                                child: const Center(
-                                    child: CircularProgressIndicator()),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

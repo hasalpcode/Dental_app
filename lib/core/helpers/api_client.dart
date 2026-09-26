@@ -37,36 +37,51 @@ class ApiClient {
 
   Uri _uri(String path) => Uri.parse('${AppConfig.baseUrl}$path');
 
+  static const _timeout = Duration(seconds: 60);
+
   Future<http.Response> get(String path, {bool auth = true}) async {
-    return _client.get(_uri(path), headers: await _headers(auth: auth));
+    return _client
+        .get(_uri(path), headers: await _headers(auth: auth))
+        .timeout(_timeout);
   }
 
-  Future<http.Response> post(String path, {Object? body, bool auth = true}) async {
-    return _client.post(
-      _uri(path),
-      headers: await _headers(auth: auth),
-      body: body == null ? null : jsonEncode(body),
-    );
+  Future<http.Response> post(String path,
+      {Object? body, bool auth = true}) async {
+    return _client
+        .post(
+          _uri(path),
+          headers: await _headers(auth: auth),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(_timeout);
   }
 
-  Future<http.Response> put(String path, {Object? body, bool auth = true}) async {
-    return _client.put(
-      _uri(path),
-      headers: await _headers(auth: auth),
-      body: body == null ? null : jsonEncode(body),
-    );
+  Future<http.Response> put(String path,
+      {Object? body, bool auth = true}) async {
+    return _client
+        .put(
+          _uri(path),
+          headers: await _headers(auth: auth),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(_timeout);
   }
 
-  Future<http.Response> patch(String path, {Object? body, bool auth = true}) async {
-    return _client.patch(
-      _uri(path),
-      headers: await _headers(auth: auth),
-      body: body == null ? null : jsonEncode(body),
-    );
+  Future<http.Response> patch(String path,
+      {Object? body, bool auth = true}) async {
+    return _client
+        .patch(
+          _uri(path),
+          headers: await _headers(auth: auth),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(_timeout);
   }
 
   Future<http.Response> delete(String path, {bool auth = true}) async {
-    return _client.delete(_uri(path), headers: await _headers(auth: auth));
+    return _client
+        .delete(_uri(path), headers: await _headers(auth: auth))
+        .timeout(_timeout);
   }
 
   /// Requête multipart (upload de fichier) : Content-Type est géré par

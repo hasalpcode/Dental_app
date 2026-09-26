@@ -4,6 +4,7 @@
 class AppConfig {
   static const String baseUrl = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: 'http://localhost:8080',
+    defaultValue: 'http://178.105.229.9:8080',
+    // defaultValue: 'http://localhost:8080',
   );
 }

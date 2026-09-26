@@ -1,10 +1,11 @@
+import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart';
 import 'package:dental_app/core/features/projects/domain/entity/project_entity.dart';
 import 'package:flutter/material.dart';
 
 class AddProjectModal extends StatefulWidget {
   final Function(ProjectEntity) onSubmit;
   final ProjectEntity? project;
-  final List<int> bureaus; // ✅ IDs bureau
+  final List<BureauEntity> bureaus;
 
   const AddProjectModal({
     super.key,
@@ -19,7 +20,7 @@ class AddProjectModal extends StatefulWidget {
 
 class _AddProjectModalState extends State<AddProjectModal> {
   int? selectedBureau;
-  late List<int> availableBureaus;
+  late List<BureauEntity> availableBureaus;
 
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
@@ -34,10 +35,6 @@ class _AddProjectModalState extends State<AddProjectModal> {
 
     if (widget.project != null) {
       selectedBureau = widget.project!.bureauId;
-      if (selectedBureau != null &&
-          !availableBureaus.contains(selectedBureau)) {
-        availableBureaus.add(selectedBureau!);
-      }
 
       nameController.text = widget.project!.libelle;
       descriptionController.text = widget.project!.description ?? '';
@@ -171,9 +168,9 @@ class _AddProjectModalState extends State<AddProjectModal> {
                     DropdownButtonFormField<int>(
                       value: selectedBureau,
                       items: availableBureaus
-                          .map((b) => DropdownMenuItem(
-                                value: b,
-                                child: Text("Bureau $b"),
+                          .map((b) => DropdownMenuItem<int>(
+                                value: b.bureauId,
+                                child: Text(b.name),
                               ))
                           .toList(),
                       onChanged: (v) => setState(() => selectedBureau = v),

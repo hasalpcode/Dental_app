@@ -46,6 +46,7 @@ class AuthRemoteDataSource {
   }
 
   Future<UserModel> login(String email, String password) async {
+    
     final response = await client.post(
       '/user-service/auth/login',
       auth: false,

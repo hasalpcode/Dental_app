@@ -54,6 +54,7 @@ class MembersCubit extends Cubit<MembersState> {
     try {
       await deleteMemberUseCase(id);
       await loadMembers();
+      emit(state.copyWith(isDeleting: false));
     } catch (e) {
       emit(state.copyWith(isDeleting: false, error: e.toString()));
     }

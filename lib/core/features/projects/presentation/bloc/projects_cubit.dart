@@ -56,6 +56,7 @@ class ProjectsCubit extends Cubit<ProjectsState> {
     try {
       await deleteProjectUseCase(id);
       await loadProjects();
+      emit(state.copyWith(isDeleting: false));
     } catch (e) {
       emit(state.copyWith(isDeleting: false, error: e.toString()));
       rethrow;

@@ -56,6 +56,7 @@ class MemberModel extends Member {
       'userId': userId,
       'username': username,
       'tel': tel,
+      'email': tel,
       'adresse': addresse,
       'bureauId': bureauId,
       'posteId': posteId,

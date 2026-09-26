@@ -35,10 +35,14 @@ class ProjectRemoteDataSource {
       '/member-service/api/projects',
       body: project.toJson(),
     );
-    if (response.statusCode == 201) {
-      return ProjectModel.fromJson(json.decode(response.body));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      try {
+        return ProjectModel.fromJson(json.decode(response.body));
+      } catch (_) {
+        return ProjectModel.fromEntity(project);
+      }
     } else {
-      throw Exception('Failed to add project');
+      throw Exception('Failed to add project (${response.statusCode})');
     }
   }
 
@@ -51,17 +55,21 @@ class ProjectRemoteDataSource {
     if (kDebugMode) {
       print("PR PROJECT RESPONSE: ${response.statusCode} - ${response.body}");
     }
-    if (response.statusCode == 200) {
-      return ProjectModel.fromJson(json.decode(response.body));
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      try {
+        return ProjectModel.fromJson(json.decode(response.body));
+      } catch (_) {
+        return ProjectModel.fromEntity(project);
+      }
     } else {
-      throw Exception('Failed to update project');
+      throw Exception('Failed to update project (${response.statusCode})');
     }
   }
 
   Future<void> deleteProject(int id) async {
     final response = await client.delete('/member-service/api/projects/$id');
-    if (response.statusCode != 204) {
-      throw Exception('Failed to delete project');
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete project (${response.statusCode})');
     }
   }
 

@@ -1,19 +1,12 @@
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/Baptemes_page.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
-import 'package:dental_app/core/features/payments/data/payment_remote_data_source.dart';
-import 'package:dental_app/core/features/payments/data/payment_repository_impl.dart';
-import 'package:dental_app/core/features/payments/domain/usecases/get_payments.dart';
-import 'package:dental_app/core/features/members/data/data_remote_source.dart';
-import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
-import 'package:dental_app/core/features/members/domain/usecases/get_members.dart';
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:dental_app/core/features/members/domain/entity/member.dart';
-import 'package:dental_app/core/features/retrait/data/retrait_remote_data_source.dart';
-import 'package:dental_app/core/features/retrait/data/retrait_repository_impl.dart';
 import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
-import 'package:dental_app/core/features/retrait/domain/usecases/get_retraits.dart';
-import 'package:dental_app/core/helpers/api_client.dart';
+import 'package:dental_app/core/features/members/presentation/bloc/members_cubit.dart';
+import 'package:dental_app/core/features/payments/presentation/bloc/payments_cubit.dart';
+import 'package:dental_app/core/features/retrait/presentation/bloc/retrait_cubit.dart';
 import 'package:dental_app/core/helpers/date_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -29,13 +22,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedYear = DateTime.now().year;
 
-  late final PaymentRepositoryImpl paymentRepository;
-  late final MemberRepositoryImpl memberRepository;
-  late final RetraitRepositoryImpl retraitRepository;
-  late final GetPayments getPayments;
-  late final GetMembers getMembers;
-  late final GetRetraits getRetraits;
-
   List<PaymentEntity> payments = [];
   List<Member> members = [];
   List<RetraitEntity> retraits = [];
@@ -48,42 +34,44 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    final client = ApiClient.instance;
-
-    paymentRepository = PaymentRepositoryImpl(PaymentRemoteDataSource(client));
-    memberRepository = MemberRepositoryImpl(MemberRemoteDataSource(client));
-    retraitRepository = RetraitRepositoryImpl(RetraitRemoteDataSource(client));
-
-    getPayments = GetPayments(paymentRepository);
-    getMembers = GetMembers(memberRepository);
-    getRetraits = GetRetraits(retraitRepository);
-
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadData();
+    });
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
 
     try {
-      final results = await Future.wait([
-        getPayments(),
-        getMembers(),
-        getRetraits(),
+      final membersCubit = context.read<MembersCubit>();
+      final paymentsCubit = context.read<PaymentsCubit>();
+      final retraitCubit = context.read<RetraitCubit>();
+
+      await membersCubit.loadMembers();
+      final loadedMembers = membersCubit.state.members;
+
+      await Future.wait([
+        paymentsCubit.loadData(members: loadedMembers),
+        retraitCubit.loadData(members: loadedMembers),
       ]);
 
-      payments = results[0] as List<PaymentEntity>;
-      members = results[1] as List<Member>;
-      retraits = results[2] as List<RetraitEntity>;
-
-      totalMembers = members.length;
-      final totalVersements =
-          payments.fold(0.0, (sum, p) => sum + p.montant);
-      final totalRetraits =
-          retraits.fold(0.0, (sum, r) => sum + r.montant);
-      totalBalance = totalVersements - totalRetraits;
+      if (mounted) {
+        setState(() {
+          members = membersCubit.state.members;
+          payments = paymentsCubit.state.payments;
+          retraits = retraitCubit.state.retraits;
+          totalMembers = members.length;
+          final totalVersements =
+              payments.fold(0.0, (sum, p) => sum + p.montant);
+          final totalRetraits =
+              retraits.fold(0.0, (sum, r) => sum + r.montant);
+          totalBalance = totalVersements - totalRetraits;
+          isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint("Erreur chargement dashboard: $e");
-    } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }

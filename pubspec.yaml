@@ -39,6 +39,8 @@ dependencies:
   fl_chart: 0.66.2
   image_picker: ^1.0.4
   cached_network_image: ^3.4.1
+  flutter_svg: ^2.0.10+1
+  flutter_native_splash: ^2.4.0
 
 dependency_overrides:
   win32: 5.5.0
@@ -47,6 +49,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -58,13 +61,23 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/img/icone_dental.jpeg
+  android_gravity: fill
+  ios_content_mode: scaleAspectFill
+  fullscreen: true
+  android_12:
+    color: "#ffffff"
+    image: assets/img/icone_dental.jpeg
+    icon_background_color: "#ffffff"
+
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/img/icone_dental.jpeg"
   min_sdk_android: 21
-  adaptive_icon_background: "#0b5260"
-  adaptive_icon_foreground: "assets/img/icone_dental.jpeg"
+  adaptive_icon_background: "#ffffff"
   web:
     generate: false
   windows:
