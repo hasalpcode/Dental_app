@@ -4,4 +4,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Autorise le HTTP en clair (http://<ip-lan>:8080) uniquement en debug :
+         le backend local n'a pas de certificat TLS pendant les tests. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>
