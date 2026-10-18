@@ -2,16 +2,12 @@ class PaymentInitiationEntity {
   final int transactionId;
   final String invoiceToken;
   final String checkoutUrl;
-  final String? omUrl;
-  final String? maxitUrl;
   final String status;
 
   PaymentInitiationEntity({
     required this.transactionId,
     required this.invoiceToken,
     required this.checkoutUrl,
-    this.omUrl,
-    this.maxitUrl,
     required this.status,
   });
 }
