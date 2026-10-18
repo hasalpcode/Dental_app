@@ -1,6 +1,7 @@
 import 'package:dental_app/core/features/auth/domain/entities/user_entity.dart';
 import 'package:dental_app/core/features/auth/presentation/login_page.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
+import 'package:dental_app/core/features/tenant_settings/presentation/TenantPayoutSettingsPage.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -93,6 +94,32 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // ── Infos détaillées ─────────────────────────────────────────
             _InfoCard(user: user, phone: widget.email),
+
+            if (auth.canModify) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const TenantPayoutSettingsPage()),
+                  ),
+                  icon: const Icon(Icons.account_balance_wallet_outlined,
+                      color: Color(0xff0b5260)),
+                  label: const Text('Réception des paiements',
+                      style: TextStyle(
+                          color: Color(0xff0b5260),
+                          fontWeight: FontWeight.w600)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xff0b5260), width: 1.2),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 24),
 
