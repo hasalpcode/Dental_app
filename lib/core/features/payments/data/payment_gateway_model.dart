@@ -4,12 +4,16 @@ class PaymentInitiationModel {
   final int transactionId;
   final String invoiceToken;
   final String checkoutUrl;
+  final String? omUrl;
+  final String? maxitUrl;
   final String status;
 
   PaymentInitiationModel({
     required this.transactionId,
     required this.invoiceToken,
     required this.checkoutUrl,
+    this.omUrl,
+    this.maxitUrl,
     required this.status,
   });
 
@@ -18,6 +22,8 @@ class PaymentInitiationModel {
       transactionId: json['transactionId'],
       invoiceToken: json['invoiceToken'],
       checkoutUrl: json['checkoutUrl'] ?? '',
+      omUrl: json['omUrl'],
+      maxitUrl: json['maxitUrl'],
       status: json['status'] ?? 'PENDING',
     );
   }
@@ -27,6 +33,8 @@ class PaymentInitiationModel {
       transactionId: transactionId,
       invoiceToken: invoiceToken,
       checkoutUrl: checkoutUrl,
+      omUrl: omUrl,
+      maxitUrl: maxitUrl,
       status: status,
     );
   }

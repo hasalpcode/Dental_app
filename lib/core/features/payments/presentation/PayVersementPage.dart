@@ -284,6 +284,26 @@ class _PayVersementPageState extends State<PayVersementPage> {
                   child: const Text('Ouvrir la page de paiement'),
                 ),
               ),
+              if (initiation.omUrl != null) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _openUrl(initiation.omUrl),
+                    child: const Text('Ouvrir Orange Money'),
+                  ),
+                ),
+              ],
+              if (initiation.maxitUrl != null) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _openUrl(initiation.maxitUrl),
+                    child: const Text('Ouvrir Maxit'),
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 24),
             if (state.isChecking) const CircularProgressIndicator(),
