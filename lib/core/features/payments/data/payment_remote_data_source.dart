@@ -50,4 +50,17 @@ class PaymentRemoteDataSource {
   Future<void> deletePayment(String id) async {
     await client.delete('/finance-service/api/versements/$id');
   }
+
+  Future<List<PaymentModel>> getVersementsForMembre(
+      int membreId, int annee) async {
+    final response = await client
+        .get('/finance-service/api/versements/membre/$membreId?annee=$annee');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => PaymentModel.fromJson(e)).toList();
+    } else {
+      throw Exception(
+          'Erreur récupération des cotisations: ${response.statusCode}');
+    }
+  }
 }

@@ -6,4 +6,5 @@ abstract class PaymentRepository {
   Future<void> addPayment(PaymentModel payment);
   Future<void> updatePayment(PaymentModel payment);
   Future<void> deletePayment(String id);
+  Future<List<PaymentEntity>> getVersementsForMembre(int membreId, int annee);
 }

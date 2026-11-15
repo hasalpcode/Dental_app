@@ -29,4 +29,11 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<void> deletePayment(String id) {
     return dataSource.deletePayment(id);
   }
+
+  @override
+  Future<List<PaymentEntity>> getVersementsForMembre(
+      int membreId, int annee) async {
+    final result = await dataSource.getVersementsForMembre(membreId, annee);
+    return result.map((e) => e.toEntity()).toList();
+  }
 }

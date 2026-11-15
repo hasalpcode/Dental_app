@@ -79,6 +79,7 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
             DateTime.now().millisecondsSinceEpoch.toString(),
         membreId: [selectedMemberId!],
         mois: "${selectedDate.month}",
+        annee: selectedDate.year,
         montant: double.tryParse(amountController.text) ?? 0,
         dateVersement: selectedDate,
       );
