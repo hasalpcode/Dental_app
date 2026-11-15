@@ -48,7 +48,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
       if (!mounted) return;
       final cached = context.read<MembersCubit>().state.members;
       if (cached.isNotEmpty) {
-        setState(() => _members = cached.where((m) => m.membreId != null).toList());
+        setState(() => _members = cached.where(_isMarriedMember).toList());
       } else {
         _fetchMembers();
       }
@@ -65,7 +65,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
               .read<MembersCubit>()
               .state
               .members
-              .where((m) => m.membreId != null)
+              .where(_isMarriedMember)
               .toList();
         });
       }
@@ -73,6 +73,10 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
       if (mounted) setState(() => _loadingMembers = false);
     }
   }
+
+  bool _isMarriedMember(Member m) =>
+      m.membreId != null &&
+      m.situationMatrimoniale?.toUpperCase() == 'MARIE';
 
   @override
   void dispose() {
@@ -314,7 +318,7 @@ class _AddBaptismModalState extends State<AddBaptismModal> {
             const SizedBox(width: 10),
             const Expanded(
               child: Text(
-                'Aucun membre disponible.',
+                'Aucun membre marié disponible.',
                 style: TextStyle(color: Colors.red, fontSize: 13),
               ),
             ),

@@ -51,7 +51,10 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
       }
     }
 
-    return _BaptismDetailData(baptism, memberNames);
+    final marriedMembers =
+        members.where((m) => m.isMarried && m.membreId != null).toList();
+
+    return _BaptismDetailData(baptism, memberNames, marriedMembers);
   }
 
   @override
@@ -79,6 +82,8 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
           final data = snapshot.data!;
           final baptism = data.baptism;
           final memberNames = data.memberNames;
+          final contributedIds =
+              baptism.contributions.map((c) => c.membreId).toSet();
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -127,6 +132,8 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+              _buildMarriedStatusSection(data.marriedMembers, contributedIds),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -276,11 +283,89 @@ class _BaptismDetailPageState extends State<BaptismDetailPage> {
   double _total(Baptism baptism) {
     return baptism.contributions.fold(0, (sum, c) => sum + c.montant);
   }
+
+  /// Compare les membres mariés (seuls concernés par la cotisation d'un
+  /// baptême) à la liste des contributions déjà enregistrées, pour montrer
+  /// qui a versé et qui n'a pas encore versé.
+  Widget _buildMarriedStatusSection(
+      List<Member> marriedMembers, Set<int> contributedIds) {
+    if (marriedMembers.isEmpty) return const SizedBox.shrink();
+
+    final sorted = [...marriedMembers]..sort((a, b) {
+        final aPaid = contributedIds.contains(a.membreId) ? 0 : 1;
+        final bPaid = contributedIds.contains(b.membreId) ? 0 : 1;
+        if (aPaid != bPaid) return aPaid.compareTo(bPaid);
+        return a.displayName.compareTo(b.displayName);
+      });
+    final paidCount =
+        marriedMembers.where((m) => contributedIds.contains(m.membreId)).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Membres mariés",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "$paidCount / ${marriedMembers.length} ont versé",
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ...sorted.map((m) {
+          final paid = contributedIds.contains(m.membreId);
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: paid
+                  ? Colors.green.withOpacity(0.08)
+                  : Colors.red.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: paid
+                    ? Colors.green.withOpacity(0.3)
+                    : Colors.red.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  paid ? Icons.check_circle : Icons.cancel_outlined,
+                  color: paid ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(m.displayName,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                Text(
+                  paid ? 'Versé' : 'Non versé',
+                  style: TextStyle(
+                    color: paid ? Colors.green[700] : Colors.red[700],
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
 }
 
 class _BaptismDetailData {
   final Baptism baptism;
   final Map<int, String> memberNames;
+  final List<Member> marriedMembers;
 
-  _BaptismDetailData(this.baptism, this.memberNames);
+  _BaptismDetailData(this.baptism, this.memberNames, this.marriedMembers);
 }
