@@ -10,6 +10,7 @@ class Member {
   final String? carteMembre;
   final int? roleId;
   final String? role;
+  final String? situationMatrimoniale;
 
   Member({
     this.membreId,
@@ -23,6 +24,7 @@ class Member {
     this.carteMembre,
     this.roleId,
     this.role,
+    this.situationMatrimoniale,
   });
 
   String get displayName {
@@ -31,4 +33,6 @@ class Member {
     }
     return username;
   }
+
+  bool get isMarried => situationMatrimoniale?.toUpperCase() == 'MARIE';
 }
