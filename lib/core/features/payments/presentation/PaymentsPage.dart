@@ -3,6 +3,7 @@ import 'package:dental_app/core/features/members/presentation/bloc/members_cubit
 import 'package:dental_app/core/features/payments/domain/entity/payments_entity.dart';
 import 'package:dental_app/core/features/payments/presentation/bloc/payments_cubit.dart';
 import 'package:dental_app/core/features/payments/presentation/bloc/payments_state.dart';
+import 'package:dental_app/core/features/payments/presentation/CotisationsAnnuellesPage.dart';
 import 'package:dental_app/core/features/payments/presentation/PayVersementPage.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/add_payment_modal.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/payment_list.dart';
@@ -211,6 +212,29 @@ class _PaymentsPageState extends State<PaymentsPage> {
     );
   }
 
+  Widget _buildSuiviAnnuelButton() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const CotisationsAnnuellesPage()),
+            );
+          },
+          icon: const Icon(Icons.calendar_month, color: Color(0xff0b5260)),
+          label: const Text(
+            'Suivi annuel (mois payés / non payés)',
+            style: TextStyle(color: Color(0xff0b5260)),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilters() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -316,6 +340,7 @@ class _PaymentsPageState extends State<PaymentsPage> {
         body: Column(
           children: [
             _buildToggle(),
+            if (_showVersements) _buildSuiviAnnuelButton(),
             _buildFilters(),
             _buildSearchBar(),
             Expanded(

@@ -4,6 +4,7 @@ class PaymentModel {
   final String? id;
   final List<int> membreIds;
   final String mois;
+  final int? annee;
   final double montant;
   final DateTime? dateVersement;
 
@@ -11,6 +12,7 @@ class PaymentModel {
     this.id,
     required this.membreIds,
     required this.mois,
+    this.annee,
     required this.montant,
     this.dateVersement,
   });
@@ -24,6 +26,7 @@ class PaymentModel {
               : [json['membreId'] as int])
           : [],
       mois: json['mois'] ?? '',
+      annee: json['annee'] as int?,
       montant: (json['montant'] as num).toDouble(),
       dateVersement: json['dateVersement'] != null
           ? DateTime.parse(json['dateVersement'])
@@ -35,6 +38,7 @@ class PaymentModel {
     return {
       "membreIds": membreIds,
       "mois": mois,
+      "annee": annee,
       "montant": montant,
       "dateVersement": dateVersement?.toIso8601String(),
     };
@@ -45,6 +49,7 @@ class PaymentModel {
       id: id,
       membreId: membreIds,
       mois: mois,
+      annee: annee,
       montant: montant,
       dateVersement: dateVersement,
     );
@@ -55,6 +60,7 @@ class PaymentModel {
       id: e.id,
       membreIds: e.membreId,
       mois: e.mois,
+      annee: e.annee,
       montant: e.montant,
       dateVersement: e.dateVersement,
     );
