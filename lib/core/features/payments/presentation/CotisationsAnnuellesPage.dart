@@ -65,7 +65,7 @@ class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
           MemberRepositoryImpl(MemberRemoteDataSource(ApiClient.instance));
       final member = await GetMyMember(memberRepo)(userId);
 
-      if (auth.isComptable) {
+      if (auth.isComptable || auth.canModify) {
         final membersCubit = context.read<MembersCubit>();
         if (membersCubit.state.members.isEmpty) {
           await membersCubit.loadMembers();
@@ -104,7 +104,7 @@ class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final isAdmin = auth.isComptable;
+    final isAdmin = auth.isComptable || auth.canModify;
 
     return BlocProvider.value(
       value: cubit,
