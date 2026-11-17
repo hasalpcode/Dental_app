@@ -4,7 +4,6 @@ import 'package:dental_app/core/features/payments/domain/entity/payments_entity.
 import 'package:dental_app/core/features/payments/presentation/bloc/payments_cubit.dart';
 import 'package:dental_app/core/features/payments/presentation/bloc/payments_state.dart';
 import 'package:dental_app/core/features/payments/presentation/CotisationAnnuelleTab.dart';
-import 'package:dental_app/core/features/payments/presentation/PayVersementPage.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/add_payment_modal.dart';
 import 'package:dental_app/core/features/payments/presentation/widgets/payment_list.dart';
 import 'package:dental_app/core/features/retrait/domain/entity/retrait_entity.dart';
@@ -135,20 +134,6 @@ class _PaymentsPageState extends State<PaymentsPage> {
         },
       ),
     );
-  }
-
-  /// Un membre non-comptable n'a pas le droit d'enregistrer un versement
-  /// directement (reserve a COMPTABLE) : il passe par ce flux self-service
-  /// Wave/Orange Money, qui ne credite le versement qu'une fois le paiement
-  /// confirme côté finance-service.
-  Future<void> _openPayVersement() async {
-    final paid = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const PayVersementPage()),
-    );
-    if (paid == true) {
-      await paymentsCubit.loadData();
-    }
   }
 
   void _openEditRetraitModal(RetraitEntity retrait) {
@@ -305,19 +290,15 @@ class _PaymentsPageState extends State<PaymentsPage> {
       child: Scaffold(
         appBar: const CurvedAppBar(title: 'Finance'),
         floatingActionButton: switch (_tab) {
-          _FinanceTab.versements => FloatingActionButton.extended(
-              onPressed:
-                  canManageVersements ? _openAddPaymentModal : _openPayVersement,
-              backgroundColor: const Color(0xff0b5260),
-              icon: Icon(
-                canManageVersements ? Icons.add : Icons.payment,
-                color: Colors.white,
-              ),
-              label: Text(
-                canManageVersements ? 'Ajouter' : 'Payer ma cotisation',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
+          _FinanceTab.versements => canManageVersements
+              ? FloatingActionButton.extended(
+                  onPressed: _openAddPaymentModal,
+                  backgroundColor: const Color(0xff0b5260),
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text('Ajouter',
+                      style: TextStyle(color: Colors.white)),
+                )
+              : null,
           _FinanceTab.retraits => canManageRetraits
               ? FloatingActionButton(
                   onPressed: _openAddRetraitModal,
