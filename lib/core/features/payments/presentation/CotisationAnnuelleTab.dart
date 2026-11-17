@@ -12,7 +12,6 @@ import 'package:dental_app/core/features/payments/presentation/bloc/cotisations_
 import 'package:dental_app/core/features/payments/presentation/bloc/cotisations_annuelles_state.dart';
 import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:dental_app/core/helpers/date_helpers.dart';
-import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -20,15 +19,15 @@ import 'package:provider/provider.dart';
 /// Vue annuelle "mois versés / non versés" d'un membre : par défaut le
 /// membre connecté, avec en plus un sélecteur de membre pour un COMPTABLE
 /// qui veut consulter la situation de n'importe qui.
-class CotisationsAnnuellesPage extends StatefulWidget {
-  const CotisationsAnnuellesPage({super.key});
+class CotisationAnnuelleTab extends StatefulWidget {
+  const CotisationAnnuelleTab({super.key});
 
   @override
-  State<CotisationsAnnuellesPage> createState() =>
-      _CotisationsAnnuellesPageState();
+  State<CotisationAnnuelleTab> createState() =>
+      _CotisationAnnuelleTabState();
 }
 
-class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
+class _CotisationAnnuelleTabState extends State<CotisationAnnuelleTab> {
   late final CotisationsAnnuellesCubit cubit;
 
   bool _loadingMember = true;
@@ -108,58 +107,54 @@ class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
 
     return BlocProvider.value(
       value: cubit,
-      child: Scaffold(
-        appBar: const CurvedAppBar(title: 'Suivi annuel des cotisations'),
-        body: _loadingMember
-            ? const Center(child: CircularProgressIndicator())
-            : (_selectedMember == null && !isAdmin)
-                ? _buildMemberError(_memberError!)
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isAdmin) ...[
-                          _buildMemberPicker(),
-                          const SizedBox(height: 15),
-                        ],
-                        _buildYearSelector(),
-                        const SizedBox(height: 20),
-                        if (_selectedMember != null)
-                          Text(
-                            _selectedMember!.displayName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 16),
-                          )
-                        else if (isAdmin)
-                          const Text(
-                            'Sélectionnez un membre pour voir sa situation.',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+      child: _loadingMember
+          ? const Center(child: CircularProgressIndicator())
+          : (_selectedMember == null && !isAdmin)
+              ? _buildMemberError(_memberError!)
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isAdmin) ...[
+                        _buildMemberPicker(),
                         const SizedBox(height: 15),
-                        if (_selectedMember != null)
-                          BlocBuilder<CotisationsAnnuellesCubit,
-                              CotisationsAnnuellesState>(
-                            builder: (context, state) {
-                              if (state.isLoading) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 40),
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                );
-                              }
-                              if (state.error != null) {
-                                return Text(state.error!,
-                                    style:
-                                        const TextStyle(color: Colors.red));
-                              }
-                              return _buildMonthsGrid(state.moisVerses);
-                            },
-                          ),
                       ],
-                    ),
+                      _buildYearSelector(),
+                      const SizedBox(height: 20),
+                      if (_selectedMember != null)
+                        Text(
+                          _selectedMember!.displayName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
+                        )
+                      else if (isAdmin)
+                        const Text(
+                          'Sélectionnez un membre pour voir sa situation.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      const SizedBox(height: 15),
+                      if (_selectedMember != null)
+                        BlocBuilder<CotisationsAnnuellesCubit,
+                            CotisationsAnnuellesState>(
+                          builder: (context, state) {
+                            if (state.isLoading) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              );
+                            }
+                            if (state.error != null) {
+                              return Text(state.error!,
+                                  style: const TextStyle(color: Colors.red));
+                            }
+                            return _buildMonthsGrid(state.moisVerses);
+                          },
+                        ),
+                    ],
                   ),
-      ),
+                ),
     );
   }
 
@@ -209,14 +204,16 @@ class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
             );
           },
           optionsViewBuilder: (context, onSelected, options) {
+            final screenWidth = MediaQuery.of(context).size.width;
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
                 elevation: 4,
                 borderRadius: BorderRadius.circular(15),
                 child: ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(maxHeight: 220, maxWidth: 320),
+                  constraints: BoxConstraints(
+                      maxHeight: 220,
+                      maxWidth: screenWidth < 360 ? screenWidth - 40 : 320),
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
@@ -256,14 +253,20 @@ class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
   }
 
   Widget _buildMonthsGrid(Set<int> moisVerses) {
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.3,
-      children: List.generate(12, (i) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final crossAxisCount = constraints.maxWidth >= 900
+          ? 6
+          : constraints.maxWidth >= 600
+              ? 4
+              : 3;
+      return GridView.count(
+        crossAxisCount: crossAxisCount,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1.3,
+        children: List.generate(12, (i) {
         final month = i + 1;
         final paid = moisVerses.contains(month);
         return Container(
@@ -294,7 +297,8 @@ class _CotisationsAnnuellesPageState extends State<CotisationsAnnuellesPage> {
             ],
           ),
         );
-      }),
-    );
+        }),
+      );
+    });
   }
 }
