@@ -9,11 +9,17 @@ import 'package:dental_app/core/usecases/curved_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// role_id 1 = USER, role_id 3 = COMPTABLE (table role côté user-service).
-int _roleIdForRole(String role) => role.toUpperCase() == 'COMPTABLE' ? 3 : 1;
+const List<String> _roleOptions = ['USER', 'COMPTABLE', 'ADMIN'];
 
-/// Réservé à ADMIN : assigner ou retirer le rôle COMPTABLE à un membre.
-/// Indépendant de toute affectation à un bureau (voir BureauDetailPage).
+/// role_id de repli si un rôle n'a jamais encore été observé dans les
+/// memberships du tenant (ADMIN est toujours présent — le propriétaire —
+/// donc seuls USER/COMPTABLE ont besoin de ce repli sur un tenant neuf).
+const Map<String, int> _fallbackRoleIds = {'USER': 1, 'COMPTABLE': 3};
+
+/// Réservé à ADMIN : assigner ou retirer un rôle (USER/COMPTABLE/ADMIN) à un
+/// membre. Indépendant de toute affectation à un bureau (voir
+/// BureauDetailPage). Le backend applique en plus une limite de 3 COMPTABLE
+/// et 2 ADMIN par tenant (409 si dépassée).
 class ManageRolesPage extends StatefulWidget {
   const ManageRolesPage({super.key});
 
@@ -29,6 +35,7 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
   String? _error;
   List<Member> _members = [];
   Map<int, String> _roleByUserId = {};
+  Map<String, int> _roleIdByName = {};
   int? _updatingUserId;
 
   @override
@@ -54,11 +61,19 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
       final members = results[0] as List<Member>;
       final memberships = results[1] as List;
 
+      final roleByUserId = <int, String>{};
+      final roleIdByName = Map<String, int>.from(_fallbackRoleIds);
+      for (final m in memberships) {
+        final userId = m.userId as int;
+        final roleName = (m.roleName as String).toUpperCase();
+        roleByUserId[userId] = roleName;
+        roleIdByName[roleName] = m.roleId as int;
+      }
+
       setState(() {
         _members = members;
-        _roleByUserId = {
-          for (final m in memberships) m.userId as int: m.roleName as String,
-        };
+        _roleByUserId = roleByUserId;
+        _roleIdByName = roleIdByName;
         _isLoading = false;
       });
     } catch (e) {
@@ -69,17 +84,15 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
     }
   }
 
-  Future<void> _toggleComptable(Member member, bool makeComptable) async {
+  Future<void> _changeRole(Member member, String newRole) async {
     final userId = member.userId;
-    if (userId == null) return;
+    final roleId = _roleIdByName[newRole];
+    if (userId == null || roleId == null) return;
 
     setState(() => _updatingUserId = userId);
     try {
-      final roleId = _roleIdForRole(makeComptable ? 'COMPTABLE' : 'USER');
       await authDataSource.updateUserRole(userId, roleId);
-      setState(() {
-        _roleByUserId[userId] = makeComptable ? 'COMPTABLE' : 'USER';
-      });
+      setState(() => _roleByUserId[userId] = newRole);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -118,13 +131,10 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final myUserId = auth.user?.userId;
 
-    // L'ADMIN (propriétaire du tenant) ne se gère pas lui-même ici, et pas
-    // de membre sans compte utilisateur associé.
-    final eligible = _members.where((m) {
-      if (m.userId == null || m.userId == myUserId) return false;
-      final role = _roleByUserId[m.userId]?.toUpperCase();
-      return role != 'ADMIN';
-    }).toList();
+    // On ne peut pas changer son propre rôle depuis cet écran (pour éviter
+    // de se verrouiller soi-même hors de la gestion des rôles).
+    final eligible =
+        _members.where((m) => m.userId != null && m.userId != myUserId).toList();
 
     if (eligible.isEmpty) {
       return const Center(
@@ -140,8 +150,7 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
       itemCount: eligible.length,
       itemBuilder: (context, index) {
         final member = eligible[index];
-        final isComptable =
-            _roleByUserId[member.userId]?.toUpperCase() == 'COMPTABLE';
+        final currentRole = _roleByUserId[member.userId] ?? 'USER';
         final isUpdating = _updatingUserId == member.userId;
 
         return Container(
@@ -166,18 +175,8 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(member.displayName,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(
-                      isComptable ? 'Rôle : COMPTABLE' : 'Rôle : USER',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
+                child: Text(member.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
               if (isUpdating)
                 const SizedBox(
@@ -186,10 +185,18 @@ class _ManageRolesPageState extends State<ManageRolesPage> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
-                Switch(
-                  value: isComptable,
-                  activeColor: const Color(0xfff08024),
-                  onChanged: (value) => _toggleComptable(member, value),
+                DropdownButton<String>(
+                  value: currentRole,
+                  underline: const SizedBox(),
+                  items: _roleOptions
+                      .map((role) =>
+                          DropdownMenuItem(value: role, child: Text(role)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null && value != currentRole) {
+                      _changeRole(member, value);
+                    }
+                  },
                 ),
             ],
           ),
