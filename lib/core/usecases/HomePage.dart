@@ -125,6 +125,17 @@ class _HomePageState extends State<HomePage> {
     return 'Bonsoir';
   }
 
+  /// Le module baptêmes ne concerne que les couples mariés (cotisation
+  /// collective) : accessible à ADMIN/COMPTABLE pour la gestion, et à un
+  /// membre uniquement si sa fiche est mariée.
+  bool _canSeeBaptemes(AuthProvider auth) {
+    if (auth.canModify || auth.isComptable) return true;
+    final userId = auth.user?.userId;
+    if (userId == null) return false;
+    final mine = members.where((m) => m.userId == userId);
+    return mine.isNotEmpty && mine.first.isMarried;
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
@@ -162,11 +173,13 @@ class _HomePageState extends State<HomePage> {
                               delayMs: 160,
                               child: _buildPaymentChart(),
                             ),
-                            const SizedBox(height: 20),
-                            _FadeSlideIn(
-                              delayMs: 240,
-                              child: _buildBaptemeBanner(),
-                            ),
+                            if (_canSeeBaptemes(auth)) ...[
+                              const SizedBox(height: 20),
+                              _FadeSlideIn(
+                                delayMs: 240,
+                                child: _buildBaptemeBanner(),
+                              ),
+                            ],
                           ],
                         ),
                       ),
