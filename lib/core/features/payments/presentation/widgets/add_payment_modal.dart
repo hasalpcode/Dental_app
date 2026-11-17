@@ -187,14 +187,18 @@ class _AddPaymentModalState extends State<AddPaymentModal> {
                         );
                       },
                       optionsViewBuilder: (context, onSelected, options) {
+                        final screenWidth = MediaQuery.of(context).size.width;
                         return Align(
                           alignment: Alignment.topLeft,
                           child: Material(
                             elevation: 4,
                             borderRadius: BorderRadius.circular(15),
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                  maxHeight: 220, maxWidth: 320),
+                              constraints: BoxConstraints(
+                                  maxHeight: 220,
+                                  maxWidth: screenWidth < 360
+                                      ? screenWidth - 40
+                                      : 320),
                               child: ListView.builder(
                                 padding: EdgeInsets.zero,
                                 shrinkWrap: true,
