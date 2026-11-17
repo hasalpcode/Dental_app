@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/auth/presentation/login_page.dart';
+import 'package:dental_app/core/features/auth/presentation/manage_roles_page.dart';
 import 'package:dental_app/core/helpers/user_storage.dart';
 import 'package:dental_app/core/usecases/profile_page.dart';
 
@@ -94,6 +95,12 @@ class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                       );
                     }
+                  } else if (value == 'manage_roles') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ManageRolesPage()),
+                    );
                   } else if (value == 'logout') {
                     if (onLogout != null) {
                       onLogout?.call();
@@ -107,11 +114,17 @@ class CurvedAppBar extends StatelessWidget implements PreferredSizeWidget {
                     }
                   }
                 },
-                itemBuilder: (_) => [
+                itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'profile',
                     child: Text('Profil'),
                   ),
+                  if (Provider.of<AuthProvider>(context, listen: false)
+                      .canModify)
+                    const PopupMenuItem(
+                      value: 'manage_roles',
+                      child: Text('Gérer les rôles'),
+                    ),
                   const PopupMenuItem(
                     value: 'logout',
                     child: Text('Déconnexion'),

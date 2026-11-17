@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dental_app/core/features/auth/data/membership_model.dart';
 import 'package:dental_app/core/features/auth/data/tenant_option_model.dart';
 import 'package:dental_app/core/features/auth/data/user_model.dart';
 import 'package:dental_app/core/helpers/api_client.dart';
@@ -24,6 +25,25 @@ class AuthRemoteDataSource {
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception(
           'Erreur modification rôle: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  /// Liste les memberships (rôle par utilisateur) du tenant courant, pour
+  /// afficher le rôle actuel de chaque membre dans l'écran de gestion des
+  /// rôles (réservé à ADMIN).
+  Future<List<MembershipModel>> getTenantMemberships() async {
+    final tenantId = await UserStorage.getTenantId();
+    if (tenantId == null) throw Exception('Tenant introuvable');
+
+    final response =
+        await client.get('/user-service/memberships/tenant/$tenantId');
+
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((e) => MembershipModel.fromJson(e)).toList();
+    } else {
+      throw Exception(
+          'Erreur récupération des rôles: ${response.statusCode} - ${response.body}');
     }
   }
 
