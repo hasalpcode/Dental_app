@@ -1,4 +1,3 @@
-import 'package:dental_app/core/features/auth/data/remote_data_auth_source.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/bureaux/domain/entity/BureauEntity.dart';
 import 'package:dental_app/core/usecases/curved_appbar.dart';
@@ -10,9 +9,6 @@ import 'package:dental_app/core/features/members/domain/usecases/update_member.d
 import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-/// role_id 1 = USER, role_id 3 = COMPTABLE (table role)
-int _roleIdForRole(String role) => role.toUpperCase() == 'COMPTABLE' ? 3 : 1;
 
 class BureauDetailPage extends StatefulWidget {
   final BureauEntity bureau;
@@ -30,7 +26,6 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
   late final MemberRepositoryImpl repository;
   late final GetMembers getMembers;
   late final UpdateMember updateMember;
-  late final AuthRemoteDataSource authDataSource;
   List<Member> allMembers = [];
   List<Member> bureauMembers = [];
   bool isLoading = true;
@@ -42,7 +37,6 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
     repository = MemberRepositoryImpl(dataSource);
     getMembers = GetMembers(repository);
     updateMember = UpdateMember(repository);
-    authDataSource = AuthRemoteDataSource(ApiClient.instance);
     _loadMembers();
   }
 
@@ -92,13 +86,11 @@ class _BureauDetailPageState extends State<BureauDetailPage> {
         bureauMembers: bureauMembers,
         onMemberSelected: (member) async {
           try {
-            // `member` porte déjà le bureauId et le rôle choisis dans la
-            // modale : on ne le reconstruit pas pour ne pas perdre ce choix.
+            // `member` porte déjà le bureauId choisi dans la modale : on ne
+            // le reconstruit pas pour ne pas perdre ce choix. L'affectation
+            // à un bureau ne touche jamais au rôle du compte (USER/COMPTABLE
+            // /ADMIN), géré séparément via "Gérer les rôles".
             await updateMember(member);
-            if (member.userId != null && member.role != null) {
-              await authDataSource.updateUserRole(
-                  member.userId!, _roleIdForRole(member.role!));
-            }
             await _loadMembers();
             if (mounted) Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
@@ -412,8 +404,6 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
   late TextEditingController _searchController;
   String _searchQuery = '';
 
-  final List<String> _roleOptions = ['USER', 'COMPTABLE'];
-
   @override
   void initState() {
     super.initState();
@@ -444,68 +434,22 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
         .toList();
   }
 
-  Future<void> _chooseRoleAndSubmit(Member member) async {
-    final updatedMember = await showDialog<Member>(
-      context: context,
-      builder: (context) {
-        String? selectedRole;
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Choisir un rôle'),
-              content: DropdownButtonFormField<String>(
-                value: selectedRole,
-                hint: const Text('Sélectionner un rôle'),
-                items: _roleOptions
-                    .map((role) => DropdownMenuItem(
-                          value: role,
-                          child: Text(role),
-                        ))
-                    .toList(),
-                onChanged: (value) => setStateDialog(() {
-                  selectedRole = value;
-                }),
-                decoration: const InputDecoration(
-                  labelText: 'Rôle',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Annuler'),
-                ),
-                ElevatedButton(
-                  onPressed: selectedRole == null
-                      ? null
-                      : () {
-                          final result = Member(
-                            membreId: member.membreId,
-                            userId: member.userId,
-                            username: member.username,
-                            tel: member.tel,
-                            addresse: member.addresse,
-                            bureauId: widget.bureauId,
-                            posteId: member.posteId,
-                            dateAdhesion: member.dateAdhesion,
-                            carteMembre: member.carteMembre,
-                            roleId: member.roleId,
-                            role: selectedRole,
-                          );
-                          Navigator.pop(context, result);
-                        },
-                  child: const Text('Valider'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  void _addToBureau(Member member) {
+    final updatedMember = Member(
+      membreId: member.membreId,
+      userId: member.userId,
+      username: member.username,
+      tel: member.tel,
+      addresse: member.addresse,
+      bureauId: widget.bureauId,
+      posteId: member.posteId,
+      dateAdhesion: member.dateAdhesion,
+      carteMembre: member.carteMembre,
+      roleId: member.roleId,
+      role: member.role,
+      situationMatrimoniale: member.situationMatrimoniale,
     );
-
-    if (updatedMember != null) {
-      widget.onMemberSelected(updatedMember);
-    }
+    widget.onMemberSelected(updatedMember);
   }
 
   @override
@@ -614,7 +558,7 @@ class _AddMemberToBureauModalState extends State<AddMemberToBureauModal> {
                       subtitle: Text(member.tel),
                       trailing: const Icon(Icons.add_circle_outline,
                           color: Color(0xff0b5260)),
-                      onTap: () => _chooseRoleAndSubmit(member),
+                      onTap: () => _addToBureau(member),
                     );
                   },
                 ),
