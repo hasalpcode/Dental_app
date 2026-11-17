@@ -1,6 +1,9 @@
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
 import 'package:dental_app/core/features/baptemes/presentation/widgets/add_baptem_modal.dart';
 import 'package:dental_app/core/features/baptemes/presentation/widgets/baptem_list.dart';
+import 'package:dental_app/core/features/members/data/data_remote_source.dart';
+import 'package:dental_app/core/features/members/data/member_repository_impl.dart';
+import 'package:dental_app/core/features/members/domain/usecases/get_my_member.dart';
 import 'package:dental_app/core/helpers/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +40,9 @@ class _BaptismPageState extends State<BaptismPage> {
   bool isLoading = true;
   bool isDeleting = false;
 
+  bool _checkingAccess = true;
+  bool _hasAccess = false;
+
   List<Baptism> get filteredBaptisms => baptisms;
 
   @override
@@ -51,7 +57,42 @@ class _BaptismPageState extends State<BaptismPage> {
     updateBaptism = UpdateBaptism(repository);
     deleteBaptism = DeleteBaptism(repository);
 
-    _loadBaptisms();
+    _checkAccess();
+  }
+
+  /// Le module baptêmes ne concerne que les couples mariés : ADMIN/COMPTABLE
+  /// y ont toujours accès, un membre simple seulement si sa fiche est mariée.
+  Future<void> _checkAccess() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+
+    if (auth.canModify || auth.isComptable) {
+      setState(() {
+        _hasAccess = true;
+        _checkingAccess = false;
+      });
+      _loadBaptisms();
+      return;
+    }
+
+    final userId = auth.user?.userId;
+    bool hasAccess = false;
+    if (userId != null) {
+      try {
+        final memberRepo =
+            MemberRepositoryImpl(MemberRemoteDataSource(ApiClient.instance));
+        final member = await GetMyMember(memberRepo)(userId);
+        hasAccess = member?.isMarried ?? false;
+      } catch (_) {
+        hasAccess = false;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _hasAccess = hasAccess;
+      _checkingAccess = false;
+    });
+    if (hasAccess) _loadBaptisms();
   }
 
   Future<void> _loadBaptisms() async {
@@ -76,6 +117,38 @@ class _BaptismPageState extends State<BaptismPage> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final canManageBaptisms = auth.canModify || auth.isComptable;
+
+    if (_checkingAccess) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!_hasAccess) {
+      return Scaffold(
+        appBar: CurvedAppBar(
+          title: "Baptêmes",
+          leading: BackButton(onPressed: () => Navigator.pop(context)),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_outline, size: 48, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  "Ce module est réservé aux membres mariés.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: CurvedAppBar(
