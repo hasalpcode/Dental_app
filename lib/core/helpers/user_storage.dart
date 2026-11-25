@@ -86,6 +86,20 @@ class UserStorage {
     return payload?['tenantId'] as String?;
   }
 
+  /// Claim `isSuperAdmin` du JWT — même logique que getTenantId() : posé
+  /// par le backend, jamais stocké séparément pour éviter de le désynchroniser
+  /// du token.
+  static bool isSuperAdminFromToken(String token) {
+    final payload = _decodeJwtPayload(token);
+    return payload?['isSuperAdmin'] == true;
+  }
+
+  static Future<bool> isSuperAdmin() async {
+    final token = await getToken();
+    if (token == null) return false;
+    return isSuperAdminFromToken(token);
+  }
+
   /// Supprime l'utilisateur (logout). Le sous-domaine est volontairement
   /// conservé : c'est l'identité de la caisse, pas de la session.
   static Future<void> clear() async {
