@@ -1,5 +1,6 @@
 import 'package:dental_app/core/features/auth/presentation/login_page.dart';
 import 'package:dental_app/core/features/auth/providers/auth_provider.dart';
+import 'package:dental_app/core/features/superadmin/presentation/super_admin_dashboard_page.dart';
 import 'package:dental_app/core/usecases/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -78,12 +79,17 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Attend que l'auto-login soit terminé (si pas encore fait)
     final isLoggedIn = await _autoLoginFuture;
+    final isSuperAdmin = isLoggedIn &&
+        Provider.of<AuthProvider>(context, listen: false).isSuperAdmin;
 
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
-            isLoggedIn ? const MainScreen() : const LoginPage(),
+        pageBuilder: (_, __, ___) => !isLoggedIn
+            ? const LoginPage()
+            : isSuperAdmin
+                ? const SuperAdminDashboardPage()
+                : const MainScreen(),
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 600),

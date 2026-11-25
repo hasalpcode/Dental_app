@@ -17,6 +17,10 @@ class AuthProvider extends ChangeNotifier {
   User? user;
   String? error;
 
+  /// Decode depuis le claim isSuperAdmin du JWT (jamais depuis l'objet User
+  /// lui-meme, qui ne le porte pas - voir UserStorage.isSuperAdminFromToken).
+  bool isSuperAdmin = false;
+
   /// Non vide quand plusieurs caisses correspondent au numéro saisi : l'UI
   /// doit alors proposer un choix avant de terminer la connexion.
   List<TenantOption>? tenantChoices;
@@ -40,8 +44,40 @@ class AuthProvider extends ChangeNotifier {
     if (storedUser == null) return false;
 
     user = storedUser;
+    isSuperAdmin = UserStorage.isSuperAdminFromToken(token);
     notifyListeners();
     return true;
+  }
+
+  /// Connexion console plateforme : contrairement a login(), pas de
+  /// resolveTenants (le super admin n'a aucun Membership) - on se connecte
+  /// directement sur le sous-domaine reserve a la plateforme.
+  Future<bool> loginAsSuperAdmin(String email, String password) async {
+    isLoading = true;
+    error = null;
+    notifyListeners();
+
+    try {
+      await UserStorage.saveSubdomain('admin');
+      final loggedInUser = await loginUser(email, password);
+      final token = loggedInUser.token;
+      if (token == null || !UserStorage.isSuperAdminFromToken(token)) {
+        error = "Ce compte n'est pas un compte super admin";
+        return false;
+      }
+
+      user = loggedInUser;
+      isSuperAdmin = true;
+      await UserStorage.saveUser(user!, token);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   /// Le gateway exige un tenant résolu sur chaque requête, mais l'écran de
@@ -107,6 +143,7 @@ class AuthProvider extends ChangeNotifier {
     user = await loginUser(email, password);
     error = null;
     if (user != null) {
+      isSuperAdmin = UserStorage.isSuperAdminFromToken(user!.token!);
       await UserStorage.saveUser(user!, user!.token!);
     }
     notifyListeners();

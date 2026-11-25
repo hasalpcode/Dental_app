@@ -1,4 +1,5 @@
 import 'package:dental_app/core/features/auth/data/tenant_option_model.dart';
+import 'package:dental_app/core/features/superadmin/presentation/super_admin_login_page.dart';
 import 'package:dental_app/core/usecases/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -451,6 +452,22 @@ class _LoginPageState extends State<LoginPage>
                                     ),
                                     child: const Text('Mot de passe oublié ?',
                                         style: TextStyle(fontSize: 12)),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              const SuperAdminLoginPage()),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.grey.shade400,
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: const Text('Console plateforme',
+                                        style: TextStyle(fontSize: 11)),
                                   ),
                                   // TextButton(
                                   //   onPressed: () => Navigator.push(
